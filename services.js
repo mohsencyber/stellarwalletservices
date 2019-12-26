@@ -252,15 +252,7 @@ exports.transferTo = async function(req,res){
 	var accountID = req.body.accountid;
 	var destinationID =  new KuknosID(req.body.destinationid);
 	var amount = req.body.amount;
-	var isNative = true;
-	var assetCode = "";
-	var assetIssuer = "";
-	if (req.body['assetcode'] && req.body['assetissuer']){
-		isNative = false;
-		assetCode = req.body.assetcode;
-		assetIssuer = req.body.assetissuer;
-	}
-	var asset = new Assets(assetCode,assetIssuer);
+	var asset = new Assets(req.body.assetcode,req.body.assetissuer);
 	console.log(assetCode);
 	destinationID.getAccountID(SqlQ,async  function(destinationID){
 		if ( !destinationID )
