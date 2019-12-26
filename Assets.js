@@ -14,7 +14,8 @@ Assets.prototype.setAssetIssuer = function(assetissuer){
 }
 
 Assets.prototype.getAssetObj = function(){
-	if ( this.assetCode.length>0 && this.assetIssuer.length>0 ){
+	if ( this.assetCode && this.assetIssuer &&
+	      this.assetCode.length>0 && this.assetIssuer.length>0 ){
 
 		//console.log("is not Native");
 		return new inStellarSdk.Asset(this.assetCode,this.assetIssuer);
