@@ -1,6 +1,8 @@
 
 module.exports ={
+	HomeDomain : "tecvest.ir",
 	CreateAmnt: '3',
+	BaseFee:50000,
 	NetworkPass:"Kuknos-NET",
 	//NetworkPass:"Kuknos Foundation, Feb 2019",
 	HorizonUrl:"https://hz1-test.kuknos.org",
