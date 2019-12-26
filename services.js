@@ -181,7 +181,7 @@ exports.submitConfirm = function(req,res){
 			  .then(({ sequence }) => {
 			    const account = new StellarSdk.Account(source.publicKey(), sequence)
 			    const transaction = new StellarSdk.TransactionBuilder(account, {
-			      fee: 50000,//StellarSdk.BASE_FEE,
+			      fee: conf.BaseFee,//StellarSdk.BASE_FEE,
 			      networkPassphrase: conf.NetworkPass//'Kuknos-NET'
 			    })
 			      .addOperation(StellarSdk.Operation.createAccount({
@@ -192,7 +192,7 @@ exports.submitConfirm = function(req,res){
 			      .build();
     			transaction.sign(StellarSdk.Keypair.fromSecret(source.secret()));
 			server.submitTransaction(transaction).then(subresult=>{
-				          var valueins=[rows.accountid,rows.nationalcode,"tecvest.ir",rows.mobilenumber,"",rows.nationalcode,rows.fullname];
+				          var valueins=[rows.accountid,rows.nationalcode,conf.HomeDomain,rows.mobilenumber,"",rows.nationalcode,rows.fullname];
 				          SqlQ.query(sqlconfiguser,valueins,function(err,resultt){
 						  console.log(err);
 					  });
@@ -225,7 +225,7 @@ exports.activeToken = function (req,res){
   server.loadAccount(requested.publicKey())
     .then(function(receiver) {
       var transaction = new StellarSdk.TransactionBuilder(receiver, {
-        fee: 50000,
+        fee: conf.BaseFee,
         networkPassphrase: conf.NetworkPass//'Kuknos-NET'
       })
         .addOperation(StellarSdk.Operation.changeTrust({
@@ -259,7 +259,7 @@ exports.transferTo = async function(req,res){
 			return res.status(404).end("destination Accound not found");
 		const accountSrc = await server.loadAccount(accountID);
 		const transaction = new StellarSdk.TransactionBuilder(accountSrc, {
-			fee:50000,
+			fee:conf.BaseFee,
 			networkPassphrase: conf.NetworkPass
 		}).addOperation(StellarSdk.Operation.payment({
       			destination: destinationID,
