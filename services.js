@@ -24,10 +24,9 @@ exports.accountinfo = async function(req,res){
 //results = 
 	var result;
 	var kuknosID= new KuknosID(req);
-        //const getAccountID = util.promisify(kuknosID.getAccountID);
-	kuknosID.getAccountID(SqlQ,async function(ireq){
+	kuknosID.getAccountID(SqlQ,async function(ireq,userinfo){
 
-	var sqluser="select id,concat(username,'*',domain) username ,domain,mobilenumber,email,nationalcode,fullname from users where id=?";
+	var sqluser="select id,concat(username,'*',domain) username ,domain,mobilenumber,email,nationalcode,fullname,personality,corpid from users where id=?";
 	var value=[ireq];
 	//var userinfoObj= new Object();
 	var userInfoJson="{}";
@@ -51,7 +50,7 @@ exports.accountinfo = async function(req,res){
 			res.status(404);
 			//return res.json(accInfoJson);
 		});
-
+	if ( !userinfo ){ //userid in accountid
 	SqlQ.query(sqluser,value,function(err,result){
 		if ( err ) console.log(err);
 		if ( result.length ){
@@ -66,6 +65,16 @@ exports.accountinfo = async function(req,res){
 			return res.json(accInfoJson);
 		}
 	});//end query
+	}else{
+		//set userid in kuknosid
+		console.log("userinfo::");
+		var alldata;
+		if ( accInfoJson.id )
+		    alldata={...userinfo,...accInfoJson};
+		else 
+		    alldata=userinfo;
+		return res.status(200).json(alldata);
+	}
 	});
 	};//end function
 
@@ -106,15 +115,15 @@ exports.submitUser = function(req,res){
 		console.log('db Connected.');
 		var ticket = uuid.v4();
 		var sms = Math.floor(Math.random() * (9988 - 1111)) + 1111;//234';
-	        var urlhref= "https://sms.magfa.com/magfaHttpService?service=enqueue&username=<username>&password=<.>&from=30009629&to="+req.body.mobilenumber+"&message="+conf.Message+sms;
+	        var urlhref= "https://sms.magfa.com/magfaHttpService?service=enqueue&username=tourism&password=RWgEwZfVJRivoKdO&from=30009629&to="+req.body.mobilenumber+"&message="+conf.Message+sms;
 	        https.get(urlhref,ress=> {
 			console.log(ress.body);
 		});
-		var sqlstrins = "insert into sessions (accountid,ticket , sms ,timereq,mobilenumber,nationalcode,fullname) values (?,?,?,now(),?,?,?)";
-		var sqlstrupd = "update sessions set accountid=?, ticket=? , sms=? , timereq=now() , mobilenumber=? , fullname=? where nationalcode=?";
+		var sqlstrins = "insert into sessions (accountid,ticket , sms ,timereq,mobilenumber,nationalcode,fullname,personality,corpid) values (?,?,?,now(),?,?,?,?,?)";
+		var sqlstrupd = "update sessions set accountid=?, ticket=? , sms=? , timereq=now() , mobilenumber=? , fullname=?, personality=? , corpid=? where nationalcode=?";
 		var sqlstrexi = "select * from sessions where nationalcode=? ";
-		var valuesins = [ req.body.accountid,ticket,sms,req.body.mobilenumber,req.body.nationalcode,req.body.fullname ];
-		var valuesupd = [ req.body.accountid,ticket,sms,req.body.mobilenumber,req.body.fullname,req.body.nationalcode ];
+		var valuesins = [ req.body.accountid,ticket,sms,req.body.mobilenumber,req.body.nationalcode,req.body.fullname,req.body.personality,req.body.corpid ];
+		var valuesupd = [ req.body.accountid,ticket,sms,req.body.mobilenumber,req.body.fullname,req.body.personality,req.body.corpid,req.body.nationalcode ];
 		var valuesexi = [ req.body.nationalcode ];
 	        SqlQ.getConnection(function(err,SqlQC){
 		SqlQC.query(sqlstrexi,valuesexi,function(err,result){
@@ -129,6 +138,7 @@ exports.submitUser = function(req,res){
           				     SqlQC.rollback(function() {
             				     //throw err;
           				     });
+						   console.log(err);
 					   return res.end(err);
         				 }});
 					//SqlQ.end();
@@ -160,7 +170,7 @@ exports.submitConfirm = function(req,res){
 		var ticket=req.body.ticket;
 		var sms = req.body.sms;
 		var sqlstr= "select * from sessions a where now() < timereq+"+conf.TimeOut+" and ticket=? and sms=? ";
-	        var sqlconfiguser= "insert into users values(?,?,?,?,?,?,?)";
+	        var sqlconfiguser= "insert into users (id,username,domain,mobilenumber,email,nationalcode,fullname,personality,corpid)values(?,?,?,?,?,?,?,?,?)";
 		var values = [ ticket,sms];
 	        var asyncres = "";
 		SqlQ.query(sqlstr,values,function(err,result){
@@ -193,7 +203,8 @@ exports.submitConfirm = function(req,res){
 			      .build();
     			transaction.sign(StellarSdk.Keypair.fromSecret(source.secret()));
 			server.submitTransaction(transaction).then(subresult=>{
-				          var valueins=[rows.accountid,rows.nationalcode,conf.HomeDomain,rows.mobilenumber,"",rows.nationalcode,rows.fullname];
+				          var valueins=[rows.accountid,rows.personality?rows.nationalcode:rows.corpid,conf.HomeDomain,rows.mobilenumber,"",rows.nationalcode,rows.fullname,rows.personality,rows.corpid];
+				          
 				          SqlQ.query(sqlconfiguser,valueins,function(err,resultt){
 						  console.log(err);
 					  });
