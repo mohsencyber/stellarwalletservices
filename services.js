@@ -48,6 +48,7 @@ exports.accountinfo = async function(req,res){
 			//console.log(accInfoJson);
 		}).catch(err => {
 			console.log("====>",err);
+			res.status(404);
 			//return res.json(accInfoJson);
 		});
 
@@ -58,7 +59,7 @@ exports.accountinfo = async function(req,res){
 			console.log("userInfoJson:");//,userInfoJson);
 			var alldata={...userInfoJson,...accInfoJson};
 			//console.log(alldata);
-			return res.json(alldata);
+			return res.status(200).json(alldata);
 		}else{
 			console.log("AccInfo:");
 			//console.log(accInfoJson);
@@ -85,14 +86,14 @@ exports.postTransaction = function(req,res){
 		SqlQ.query(sqlstr,values,function(err,result){
 			if (err) return res.end(err);
 			if (!result.length ) 
-				return res.status(400).end("Transaction not permitted");
+				return res.status(403).end("Transaction not permitted");
 		});
 	}
         server.submitTransaction(transaction).then (results => {
 		return res.send(JSON.stringify(results));
 	}).catch(err =>{ 
 		console.log(err.response.data.extras.result_codes);
-		return  res.status(400).send(err.response.data.extras.result_codes);
+		return  res.status(406).send(err.response.data.extras.result_codes);
 	} );
 };
 
@@ -199,7 +200,7 @@ exports.submitConfirm = function(req,res){
 					  return res.send(rows.accountid);
 				  }).catch(function(error){
 					  console.log("submitError==>"+error);
-					  return res.status(400).send(error.response.data.extras.result_codes);
+					  return res.status(406).send(error.response.data.extras.result_codes);
 				  });
           		});
 			}catch(errors){
@@ -254,20 +255,30 @@ exports.transferTo = async function(req,res){
 	var amount = req.body.amount;
 	var asset = new Assets(req.body.assetcode,req.body.assetissuer);
 	console.log(req.body.assetcode);
-	destinationID.getAccountID(SqlQ,async  function(destinationID){
-		if ( !destinationID )
+	await destinationID.getAccountID(SqlQ, function(destinationid){
+		console.log("==>"+destinationid+"<==");
+		if ( !destinationid )
 			return res.status(404).end("destination Accound not found");
-		const accountSrc = await server.loadAccount(accountID);
+		const accountSrc = server.loadAccount(accountID).then(accountSrc =>{
+		//.catch(errors=>{
+			//console.log("account error: ", errors);
+			//return res.status(404).end("Account not found");
+		//});
 		const transaction = new StellarSdk.TransactionBuilder(accountSrc, {
 			fee:conf.BaseFee,
 			networkPassphrase: conf.NetworkPass
 		}).addOperation(StellarSdk.Operation.payment({
-      			destination: destinationID,
+      			destination: destinationid,
 			asset:asset.getAssetObj(),
 			amount:amount,
 		})).setTimeout(0)
 		.build();
 		return res.end(transaction.toXDR('base64'));
+		}).catch(errors=>{
+                        console.log("account error: ", errors);
+                        return res.status(404).end("Account not found");
+                });
+
 	});
 
 };//end func
