@@ -253,7 +253,7 @@ exports.transferTo = async function(req,res){
 	var destinationID =  new KuknosID(req.body.destinationid);
 	var amount = req.body.amount;
 	var asset = new Assets(req.body.assetcode,req.body.assetissuer);
-	console.log(assetCode);
+	console.log(req.body.assetcode);
 	destinationID.getAccountID(SqlQ,async  function(destinationID){
 		if ( !destinationID )
 			return res.status(404).end("destination Accound not found");
