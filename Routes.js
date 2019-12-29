@@ -9,6 +9,9 @@ module.exports = function(app) {
         console.log("Router in get_account_info : ",task);
 });
 
+	app.get( '/federation',function(req,res){
+		myfunc.federation(req,res);
+	});
 	app.get('/assetslist',function(req,res){
 		var assetlist = myfunc.listOfAssets(req,res);
 	});//end func

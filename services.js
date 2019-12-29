@@ -295,3 +295,33 @@ exports.transferTo = async function(req,res){
 	});
 
 };//end func
+
+exports.federation = function(req,res){
+	var values=req.query.q.split("*");
+	if ( req.query.type ){
+		if ( req.query.type=="name" ){
+			var sqlstr="select id from users where username=? and domain=? ";
+			SqlQ.query(sqlstr,values,function(err,result){
+				if ( err ) console.log(err.message);
+		                if ( result ){
+		                        var userInfoJson = result[0];
+					return  res.json(userInfoJson);
+				}else
+					return res.status(404).end("not found");
+			});
+		}else if ( req.query.type=="id" ){
+			var sqlstr="select username kuknos_id from users where id=?";
+			console.log(values);
+			SqlQ.query(sqlstr,values,function(err,result){
+		                if ( err ) console.log(err.message);
+		                if ( result ) {
+		                        var userInfoJson = result[0];
+					return res.json(userInfoJson);
+				}else
+					return res.status(404).end("not found");
+			});
+		}else
+			return res.status(400).end("type not support");
+	}else
+		return res.status(400).end("type not support");
+};//end func
