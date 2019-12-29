@@ -8,6 +8,7 @@ const myXdr =    require('js-xdr');
 const KuknosID = require('./KuknosID.js');
 const util =     require('util');
 const Assets =   require('./Assets.js');
+const NationalChecker = require('./nationalcodechecker.js');
 
 //accID tecvest = 'GD2YOX2GL3LQQKLNBKRG3H2MXRLCL6OM24PRXATIWC2RHD4Q6EE44BUL';
 const publicKey='GDKHHHLBBCAEUD54ZBGXNFSXBR37EUHJCKGXOFTJLXXLIA75TNK533SI';
@@ -113,17 +114,20 @@ exports.submitUser = function(req,res){
 	//DbCon.connect(function(err){
 	//	if (err) return res.send(err);
 		console.log('db Connected.');
+	        var nationalChecker = new NationalChecker(req.body.personality,req.body.nationalcode,req.body.corpid,req.body.mobilenumber);
+	nationalChecker.isVerified().then(resv=>{
+		if ( resv ) {
 		var ticket = uuid.v4();
 		var sms = Math.floor(Math.random() * (9988 - 1111)) + 1111;//234';
-	        var urlhref= "https://sms.magfa.com/magfaHttpService?service=enqueue&username=tourism&password=RWgEwZfVJRivoKdO&from=30009629&to="+req.body.mobilenumber+"&message="+conf.Message+sms;
+	        var urlhref= "https://sms.magfa.com/magfaHttpService?service=enqueue&username=<.>&password=<.>&from=30009629&to="+req.body.mobilenumber+"&message="+conf.Message+sms;
 	        https.get(urlhref,ress=> {
 			console.log(ress.body);
 		});
 		var sqlstrins = "insert into sessions (accountid,ticket , sms ,timereq,mobilenumber,nationalcode,fullname,personality,corpid) values (?,?,?,now(),?,?,?,?,?)";
 		var sqlstrupd = "update sessions set accountid=?, ticket=? , sms=? , timereq=now() , mobilenumber=? , fullname=?, personality=? , corpid=? where nationalcode=?";
 		var sqlstrexi = "select * from sessions where nationalcode=? ";
-		var valuesins = [ req.body.accountid,ticket,sms,req.body.mobilenumber,req.body.nationalcode,req.body.fullname,req.body.personality,req.body.corpid ];
-		var valuesupd = [ req.body.accountid,ticket,sms,req.body.mobilenumber,req.body.fullname,req.body.personality,req.body.corpid,req.body.nationalcode ];
+		var valuesins = [ req.body.accountid,ticket,sms,req.body.mobilenumber,req.body.nationalcode,req.body.fullname,nationalChecker.personality,req.body.corpid ];
+		var valuesupd = [ req.body.accountid,ticket,sms,req.body.mobilenumber,req.body.fullname,nationalChecker.personality,req.body.corpid,req.body.nationalcode ];
 		var valuesexi = [ req.body.nationalcode ];
 	        SqlQ.getConnection(function(err,SqlQC){
 		SqlQC.query(sqlstrexi,valuesexi,function(err,result){
@@ -136,12 +140,10 @@ exports.submitUser = function(req,res){
 					SqlQC.commit(function(err) {
         				   if (err) {
           				     SqlQC.rollback(function() {
-            				     //throw err;
           				     });
 						   console.log(err);
 					   return res.end(err);
         				 }});
-					//SqlQ.end();
 					return res.end(ticket);
 				});
 			}else {
@@ -151,18 +153,18 @@ exports.submitUser = function(req,res){
 					SqlQC.commit(function(err) {
         				  if (err) {
           				    SqlQC.rollback(function() {
-            				    //throw err;
           				    });
 					  return res.end(err);
         				 }});
-					//SqlQ.end();
 					return res.end(ticket);
 				});
-
 			}
 		});
-			
 	});
+	}else{
+		return res.status(400).end("request is not verified");
+	}
+     });//isVerified
 	//DbCon.commit();
 };
 

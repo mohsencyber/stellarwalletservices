@@ -40,11 +40,11 @@ KuknosID.prototype.getAccountID = async function(SqlConn,callback) {
 						callback(this.accountID,federationRecord);
 					}).catch(error=>{
 						console.log(error);
-						//callback();
+						callback();
 					});
 				}).catch(error=>{
 					console.log(error);
-					//callback();
+					callback();
 				});
 			//callback();
 		}
