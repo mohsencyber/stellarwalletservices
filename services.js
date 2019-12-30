@@ -10,10 +10,12 @@ const util =     require('util');
 const Assets =   require('./Assets.js');
 const NationalChecker = require('./nationalcodechecker.js');
 
+StellarSdk.Config.setAllowHttp(conf.AllowHttp);
+
 //accID tecvest = 'GD2YOX2GL3LQQKLNBKRG3H2MXRLCL6OM24PRXATIWC2RHD4Q6EE44BUL';
 const publicKey='GDKHHHLBBCAEUD54ZBGXNFSXBR37EUHJCKGXOFTJLXXLIA75TNK533SI';
 const secretKey='SCOE3UNFCGYGKHWLLEG2KONSE7OYXHTWTTEGCQ6B2VYP5HH76S6PYOGI';
-const  server = new StellarSdk.Server(conf.HorizonUrl,{allowHttp: true});//'https://hz1-test.kuknos.org');
+const  server = new StellarSdk.Server(conf.HorizonUrl);//'https://hz1-test.kuknos.org');
 
 async function getAccountInfo(accid){
 	var resultJson;
