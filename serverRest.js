@@ -3,6 +3,7 @@ var express = require('express'),
   port = process.env.PORT || 3000;
   bodyParser = require('body-parser');
 
+//process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 //var  DB_HOST ;
 if (process.argv[2]) 
 	global.DB_HOST = process.argv[2];

@@ -13,7 +13,7 @@ const NationalChecker = require('./nationalcodechecker.js');
 //accID tecvest = 'GD2YOX2GL3LQQKLNBKRG3H2MXRLCL6OM24PRXATIWC2RHD4Q6EE44BUL';
 const publicKey='GDKHHHLBBCAEUD54ZBGXNFSXBR37EUHJCKGXOFTJLXXLIA75TNK533SI';
 const secretKey='SCOE3UNFCGYGKHWLLEG2KONSE7OYXHTWTTEGCQ6B2VYP5HH76S6PYOGI';
-const  server = new StellarSdk.Server(conf.HorizonUrl);//'https://hz1-test.kuknos.org');
+const  server = new StellarSdk.Server(conf.HorizonUrl,{allowHttp: true});//'https://hz1-test.kuknos.org');
 
 async function getAccountInfo(accid){
 	var resultJson;
@@ -162,6 +162,7 @@ exports.submitUser = function(req,res){
 		});
 	});
 	}else{
+		console.log("request is not verified.");
 		return res.status(400).end("request is not verified");
 	}
      });//isVerified
@@ -311,7 +312,7 @@ exports.federation = function(req,res){
 			});
 		}else if ( req.query.type=="id" ){
 			var sqlstr="select username kuknos_id from users where id=?";
-			console.log(values);
+			//console.log(values);
 			SqlQ.query(sqlstr,values,function(err,result){
 		                if ( err ) console.log(err.message);
 		                if ( result ) {
