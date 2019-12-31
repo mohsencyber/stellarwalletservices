@@ -1,3 +1,5 @@
+const Shahkar = require('./shahkar.js');
+
 class NationalCodeChecker{
 	constructor(personality,nationalcode,nationalid,mobilenumber){
 		//console.log(personality,nationalid);
@@ -109,9 +111,16 @@ class NationalCodeCheck extends CheckerBase {
 	 isVerified(){
 		//console.log("nationalCode verifier.");
 		if ( this.isValid() ) {
-			//check shahkar service for verify nationalcode+mobilenumber
 			if ( !this.mobileNumber ) 
 				return false;
+			//check shahkar service for verify nationalcode+mobilenumber
+			if (shahkar.isVerified('09121872491','0068812991') ){
+        			console.log('Shahkar is Ok');
+				return true;
+			}lse{
+        			console.log('Shakar is not Ok');
+				return false;
+			}
 			return true;
 		}else
 			return  false;

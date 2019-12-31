@@ -10,6 +10,8 @@ const util =     require('util');
 const Assets =   require('./Assets.js');
 const NationalChecker = require('./nationalcodechecker.js');
 
+global.SHAHKAR_URL=conf.ShahkarUrl;
+
 StellarSdk.Config.setAllowHttp(conf.AllowHttp);
 
 //accID tecvest = 'GD2YOX2GL3LQQKLNBKRG3H2MXRLCL6OM24PRXATIWC2RHD4Q6EE44BUL';
@@ -59,7 +61,11 @@ exports.accountinfo = async function(req,res){
 		if ( result.length ){
 			userInfoJson = result[0];//JSON.parse(JSON.stringify(result[0]));
 			console.log("userInfoJson:");//,userInfoJson);
-			var alldata={...userInfoJson,...accInfoJson};
+			var alldata;
+			if ( accInfoJson.id)
+			   alldata={...userInfoJson,...accInfoJson};
+			else
+			   alldata=userInfoJson;
 			//console.log(alldata);
 			return res.status(200).json(alldata);
 		}else{
@@ -305,11 +311,11 @@ exports.federation = function(req,res){
 		if ( req.query.type=="name" ){
 			var sqlstr="select id from users where username=? and domain=? ";
 			SqlQ.query(sqlstr,values,function(err,result){
-				if ( err ) console.log(err.message);
+                		if ( err ) console.log(err.message);
 		                if ( result ){
 		                        var userInfoJson = result[0];
 					return  res.json(userInfoJson);
-				}else
+				}else 
 					return res.status(404).end("not found");
 			});
 		}else if ( req.query.type=="id" ){
