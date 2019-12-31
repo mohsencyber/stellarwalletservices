@@ -9,7 +9,7 @@ depend on mysql server:
    grant all privileges on federation.* to '<user_name>'@'%' identified by '<password>';
    
 
-create tables in  database.sql
+use database.sql for create tables
 
 build docker :
 
