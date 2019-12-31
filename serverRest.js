@@ -2,6 +2,7 @@ var express = require('express'),
   app = express(),
   port = process.env.PORT || 3000;
   bodyParser = require('body-parser');
+//var router=express.Router();
 
 //process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 //var  DB_HOST ;
@@ -21,6 +22,18 @@ if ( process.env.DB_PASS )
 	global.DB_PASS = process.env.DB_PASS;
 else 
 	global.DB_PASS ='123456';
+
+if ( process.env.SHAHKAR_USER )
+	global.SHAHKAR_USER = process.env.SHAHKAR_USER;
+else 
+	global.SHAHKAR_USER = "tech@kuknos.org";
+
+if ( process.env.SHAHKAR_PASS )
+	global.SHAHKAR_PASS = process.env.SHAHKAR_PASS;
+else 
+	global.SHAHKAR_PASS = "Ci699!";
+
+
 ;
   console.log(DB_HOST);
   app.use(bodyParser.urlencoded({ extended: true }));
@@ -28,6 +41,11 @@ else
 
   var routes = require('./Routes'); //importing route
   routes(app);
+  //router.use(function(req,res,routes){
+  //	  routes(router);
+  //});
+  //app.use('/wallet',routes(app));
+  //routes(app);
 //  app.use(function(req, res) {
 //    res.status(404).send({url: req.originalUrl + ' not found '})
 //  });
