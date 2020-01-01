@@ -1,17 +1,10 @@
 
---
--- Table structure for table `assets`
---
-
 DROP TABLE IF EXISTS `assets`;
 CREATE TABLE `assets` (
+  `id` int(6) auto_increment Primary key,
   `assetissuer` varchar(60) DEFAULT NULL,
   `assetcode` varchar(20) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
-
---
--- Table structure for table `sessions`
---
 
 DROP TABLE IF EXISTS `sessions`;
 CREATE TABLE `sessions` (
@@ -28,10 +21,6 @@ CREATE TABLE `sessions` (
   PRIMARY KEY (`nationalcode`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
---
--- Table structure for table `users`
---
-
 DROP TABLE IF EXISTS `users`;
 CREATE TABLE `users` (
   `id` varchar(255) NOT NULL,
@@ -47,13 +36,12 @@ CREATE TABLE `users` (
   UNIQUE KEY `personality` (`personality`,`nationalcode`,`corpid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
---
--- Table structure for table `validsource`
---
-
 DROP TABLE IF EXISTS `validsource`;
 CREATE TABLE `validsource` (
   `accountid` varchar(255) DEFAULT NULL,
   `id` int(4) NOT NULL AUTO_INCREMENT,
+  `assetid` int(6) NULL ,
+  foreign key ( assetid ) references assets(id),
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=latin1;
+
