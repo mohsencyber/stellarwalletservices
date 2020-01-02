@@ -9,10 +9,10 @@ class Shahkar{
 		//console.log(this.User);
 	}
 
-	async isVerified(mobilenumber,nationalcode){
+	async isVerified(mobilenumber,nationalcode,callback){
 
 	var trreq = await axios({
-		  url: 'https://esbapi.pec.ir/ApiManager/Vas/Shahkar',
+		  url: this.Url, 
 
 		method: 'post', // default
 
@@ -28,11 +28,9 @@ class Shahkar{
 		  }
 
 		}).then(response=>{
-		        console.log(response);
-			if (response['isOwner']==true)
-				return true;
-			else
-				return false;
+		        //console.log(response['isOwner']);
+		        //console.log(response.data.isOwner);
+		        callback(response.data.isOwner);
 		});		
 		
 	}

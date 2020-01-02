@@ -9,14 +9,15 @@ const KuknosID = require('./KuknosID.js');
 const util =     require('util');
 const Assets =   require('./Assets.js');
 const NationalChecker = require('./nationalcodechecker.js');
+const TransferAuthorize = require('./transferauthorize.js');
 
 global.SHAHKAR_URL=conf.ShahkarUrl;
 
 StellarSdk.Config.setAllowHttp(conf.AllowHttp);
 
 //accID tecvest = 'GD2YOX2GL3LQQKLNBKRG3H2MXRLCL6OM24PRXATIWC2RHD4Q6EE44BUL';
-const publicKey='GDKHHHLBBCAEUD54ZBGXNFSXBR37EUHJCKGXOFTJLXXLIA75TNK533SI';
-const secretKey='SCOE3UNFCGYGKHWLLEG2KONSE7OYXHTWTTEGCQ6B2VYP5HH76S6PYOGI';
+const publicKey='GBQ7LPNULIXKQHZNFUUA7QURKZG4QHYE5LI6QPDKRWTT37BDTSW6DBVC';
+const secretKey='SCOEJGH5I23FLXYMD3ZVNUMUVHMBD5T3UZB36PAWSLXIB5LYDI7X3BVC';
 const  server = new StellarSdk.Server(conf.HorizonUrl);//'https://hz1-test.kuknos.org');
 
 async function getAccountInfo(accid){
@@ -88,7 +89,7 @@ exports.accountinfo = async function(req,res){
 	};//end function
 
 
-exports.postTransaction = function(req,res){
+exports.postTransaction = async function(req,res){
 //results =
         var result;
 	//console.log(req);
@@ -98,49 +99,20 @@ exports.postTransaction = function(req,res){
         var srcTrns = StellarBase.StrKey.encodeEd25519PublicKey(transaction.toEnvelope().tx().sourceAccount().ed25519());
         //var output = transaction.toXDR();
 	//var trns = myXdr.Envelope.fromXDR(req);
-	if ( conf.SourceControl ){
-		var operations = transaction.toEnvelope().tx().operations();
-		var transferNotPermited=false;
-		operations.forEach(element=>{
-			if (!transferNotPermited){
-			var assetcodeqry;
-			var assetissuqry;
-			var asstcodeFilter;
-			var asstissuFilter;
-			var sqlstr;
-			var values;
-			try{
-				if (StellarSdk.Asset.fromOperation(element.body().paymentOp().asset()).isNative()){
-					if ( conf.NativeControl ){
-			        		sqlstr = "select * from validsource a where a.accountid=? and a.assetid is null";
-				        	values = [srcTrns];
-					}else
-						return;
-				}else{
-					asstcodeFilter=StellarSdk.Asset.fromOperation(element.body().paymentOp().asset()).getCode();
-					asstissuFilter=StellarSdk.Asset.fromOperation(element.body().paymentOp().asset()).getIssuer();
-			        	sqlstr = "select * from validsource a left join assets b on a.assetid=b.id where a.accountid=? and b.assetcode = ? and b.assetissuer = ? ";
-				        values = [srcTrns,asstcodeFilter,asstissuFilter];
-				}
-			        SqlQ.query(sqlstr,values,function(err,result){
-					if (err) return console.log(err);
-					if (!result.length ) 
-						transferNotPermited = true;
-				});
-				
-			}catch(e){
-			}
+	var operations = transaction.toEnvelope().tx().operations();
+	var transferAuth = new TransferAuthorize(SqlQ,StellarSdk,conf);
+	await transferAuth.isOperationPermitted(srcTrns,operations, async function(result){
+		if ( result ){
+        		await server.submitTransaction(transaction).then (results => {
+				return res.send(JSON.stringify(results));
+			}).catch(err =>{ 
+				console.log(err.response.data.extras.result_codes);
+				return  res.status(406).send(err.response.data.extras.result_codes);
+			} );
 		}
-		}); 
-		if ( transferNotPermited )
-		     return res.status(403).end("Transaction not permitted");
-	}
-        server.submitTransaction(transaction).then (results => {
-		return res.send(JSON.stringify(results));
-	}).catch(err =>{ 
-		console.log(err.response.data.extras.result_codes);
-		return  res.status(406).send(err.response.data.extras.result_codes);
-	} );
+		else 
+			return res.status(401).send("transfer not permitted.");
+	});
 };
 
 
@@ -151,11 +123,11 @@ exports.submitUser = function(req,res){
 	//	if (err) return res.send(err);
 		console.log('db Connected.');
 	        var nationalChecker = new NationalChecker(req.body.personality,req.body.nationalcode,req.body.corpid,req.body.mobilenumber);
-	nationalChecker.isVerified().then(resv=>{
+	nationalChecker.isVerified( resv=>{
 		if ( resv ) {
 		var ticket = uuid.v4();
 		var sms = Math.floor(Math.random() * (9988 - 1111)) + 1111;//234';
-	        var urlhref= "https://sms.magfa.com/magfaHttpService?service=enqueue&username=tourism&password=RWgEwZfVJRivoKdO&from=30009629&to="+req.body.mobilenumber+"&message="+conf.Message+sms;
+	        var urlhref= "https://sms.magfa.com/magfaHttpService?service=enqueue&username=<.>&password=<.>&from=30009629&to="+req.body.mobilenumber+"&message="+conf.Message+sms;
 	        https.get(urlhref,ress=> {
 			console.log(ress.body);
 		});
@@ -201,21 +173,20 @@ exports.submitUser = function(req,res){
 		console.log("request is not verified.");
 		return res.status(400).end("request is not verified");
 	}
+     }).catch(e=>{
+	     console.log('[Error]'+e.message);
      });//isVerified
 	//DbCon.commit();
 };
 
-async function createAcc(source,destination)
-{
-}
-exports.submitConfirm = function(req,res){
+exports.submitConfirm = async function(req,res){
 		var ticket=req.body.ticket;
 		var sms = req.body.sms;
 		var sqlstr= "select * from sessions a where now() < timereq+"+conf.TimeOut+" and ticket=? and sms=? ";
 	        var sqlconfiguser= "insert into users (id,username,domain,mobilenumber,email,nationalcode,fullname,personality,corpid)values(?,?,?,?,?,?,?,?,?)";
 		var values = [ ticket,sms];
 	        var asyncres = "";
-		SqlQ.query(sqlstr,values,function(err,result){
+		await SqlQ.query(sqlstr,values,async function(err,result){
 			if (err){ 
 				console.log("ticket is err.",err);
 				//SqlQ.end();
@@ -227,43 +198,34 @@ exports.submitConfirm = function(req,res){
 			   //SqlQ.end();
 	                  var source = StellarSdk.Keypair.fromSecret(secretKey);
 			  var destination= StellarSdk.Keypair.fromPublicKey(rows.accountid);
-			try{
-			if (conf.SourceControl &&  conf.NativeControl )
-			{
-				throw "Not Permited";
-				var sqlControl = "select * from validsource a where a.accountid=? and a.assetid is null";
-				var valuess=[source,publicKey()];
-				SqlQ.query( sqlControl,valuess,function(err,result){
-					if (err) throw err;
-					if ( !result.lenght )
-						throw "Not Permited";
-
-				});
-		         }	
-	    	  server.accounts()
-		  .accountId(source.publicKey())
-		  .call()
-		  .then(({ sequence }) => {
-		    const account = new StellarSdk.Account(source.publicKey(), sequence)
-		    const transaction = new StellarSdk.TransactionBuilder(account, {
-		      fee: conf.BaseFee,//StellarSdk.BASE_FEE,
-		      networkPassphrase: conf.NetworkPass//'Kuknos-NET'
-		    })
-		      .addOperation(StellarSdk.Operation.createAccount({
-		        destination: destination.publicKey(),
-		        startingBalance: conf.CreateAmnt//'3'
-		      }))
+			  var transferAuth = new TransferAuthorize(SqlQ,StellarSdk,conf);
+		try{
+		  await transferAuth.isNativePermitted(source.publicKey(),async function(result){
+	          if (result){
+	    	 	 await server.accounts()
+			  .accountId(source.publicKey())
+			  .call()
+			  .then(async ({ sequence }) => {
+		   	 const account = new StellarSdk.Account(source.publicKey(), sequence)
+		    	const transaction = new StellarSdk.TransactionBuilder(account, {
+		     	 fee: conf.BaseFee,//StellarSdk.BASE_FEE,
+		     	 networkPassphrase: conf.NetworkPass//'Kuknos-NET'
+		   	 })
+		      	.addOperation(StellarSdk.Operation.createAccount({
+		        	destination: destination.publicKey(),
+		        	startingBalance: conf.CreateAmnt//'3'
+		      	}))
 		      //.addOperation(StellarSdk.Operation.setOptions({
                              //        homeDomain:conf.HomeDomain,
                              //        inflationDest:conf.Inflation
                              //}))
 		          .setTimeout(0)
-		      .build();
-    		transaction.sign(StellarSdk.Keypair.fromSecret(source.secret()));
-		server.submitTransaction(transaction).then(subresult=>{
+		      	.build();
+    			transaction.sign(StellarSdk.Keypair.fromSecret(source.secret()));
+			await server.submitTransaction(transaction).then(async function(subresult){
 				          var valueins=[rows.accountid,rows.personality?rows.nationalcode:rows.corpid,conf.HomeDomain,rows.mobilenumber,"",rows.nationalcode,rows.fullname,rows.personality,rows.corpid];
 				          
-				          SqlQ.query(sqlconfiguser,valueins,function(err,resultt){
+				         await  SqlQ.query(sqlconfiguser,valueins,function(err,resultt){
 						  console.log(err);
 					  });
 					  return res.send(rows.accountid);
@@ -272,8 +234,14 @@ exports.submitConfirm = function(req,res){
 					  return res.status(406).send(error.response.data.extras.result_codes);
 				  });
           		});
+		  }else
+			  {
+				  console.log("[error-create-account]transfer from this sources is not permitted.");
+				  return res.status(401).send("transfer is not permitted");
+			  }
+		  });//
 			}catch(errors){
-				console.log("errors2:"+errors);
+				console.log("[errors2]:"+errors);
 				return res.status(404).end(errors);
 			      };
 			

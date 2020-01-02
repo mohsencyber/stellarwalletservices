@@ -15,8 +15,8 @@ class NationalCodeChecker{
        isValid(){
 	       return  this.idChecker.isValid();
        }
-       async isVerified(){
-	       return  await this.idChecker.isVerified();
+       async isVerified(callback){
+	       return  await this.idChecker.isVerified(callback);
        }
        get corpID () {
 	       return this.idChecker.nationalID;
@@ -72,13 +72,13 @@ class NationalIDCheck extends CheckerBase {
   		return (c==s);		
 	}
 
-	 isVerified(){
+	 isVerified(callback){
 		//console.log("nationalID verifier.");
 		if ( this.isValid() ) {
 			//check NationalID with NationalCode of CEO
-			return true;
+			callback(true);
 		}else 
-			return false;
+			callback(false);
 	}
 }
 
@@ -109,23 +109,26 @@ class NationalCodeCheck extends CheckerBase {
   		return (s<2 && c==s) || (s>=2 && c==(11-s));		
 	}
 
-	 isVerified(){
+	 async isVerified(callback){
 		//console.log("nationalCode verifier.");
+		var result;
 		if ( this.isValid() ) {
 			if ( !this.mobileNumber ) 
-				return false;
+				result = false;
 			//check shahkar service for verify nationalcode+mobilenumber
 			var shahkar = new Shahkar(SHAHKAR_USER,SHAHKAR_PASS,conf.ShahkarUrl);
-			if (shahkar.isVerified(this.mobileNumber,this.nationalCode) ){
-        			console.log('Shahkar is Ok');
-				return true;
-			}else{
-        			console.log('Shakar is not Ok');
-				return false;
-			}
-			return true;
+			await shahkar.isVerified(this.mobileNumber,this.nationalCode,function(sres) {
+				if (sres){
+        				console.log('Shahkar is Ok');
+					result = true;
+				}else{
+        				console.log('Shakar is not Ok');
+					result =  false;
+				}
+			});
 		}else
-			return  false;
+			result = false;
+		 callback(result);
 	}
 }
 
