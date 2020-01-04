@@ -18,7 +18,7 @@ class TransferAuthorize{
 
                                 });
                          }
-		return true;
+		callback( true );
 	}
 
 	async isOperationPermitted(srcTrns,operations, callback){
