@@ -55,7 +55,7 @@ exports.accountinfo = async function(req,res){
 			//console.log(accInfoJson);
 		}).catch(err => {
 			console.log("====>",err);
-			res.status(404);
+			return  res.status(404).json("Account not found");
 			//return res.json(accInfoJson);
 		});
 	if ( !userinfo ){ //userid in accountid
