@@ -16,8 +16,10 @@ global.SHAHKAR_URL=conf.ShahkarUrl;
 StellarSdk.Config.setAllowHttp(conf.AllowHttp);
 
 //accID tecvest = 'GD2YOX2GL3LQQKLNBKRG3H2MXRLCL6OM24PRXATIWC2RHD4Q6EE44BUL';
-const publicKey='GBQ7LPNULIXKQHZNFUUA7QURKZG4QHYE5LI6QPDKRWTT37BDTSW6DBVC';
-const secretKey='SCOEJGH5I23FLXYMD3ZVNUMUVHMBD5T3UZB36PAWSLXIB5LYDI7X3BVC';
+//const publicKey='GBQ7LPNULIXKQHZNFUUA7QURKZG4QHYE5LI6QPDKRWTT37BDTSW6DBVC';live
+//const secretKey='SCOEJGH5I23FLXYMD3ZVNUMUVHMBD5T3UZB36PAWSLXIB5LYDI7X3BVC';live
+const publicKey='GDKHHHLBBCAEUD54ZBGXNFSXBR37EUHJCKGXOFTJLXXLIA75TNK533SI';//test
+const secretKey='SCOE3UNFCGYGKHWLLEG2KONSE7OYXHTWTTEGCQ6B2VYP5HH76S6PYOGI';//test
 const  server = new StellarSdk.Server(conf.HorizonUrl);//'https://hz1-test.kuknos.org');
 
 async function getAccountInfo(accid){
@@ -270,6 +272,29 @@ exports.activeToken = function (req,res){
         .addOperation(StellarSdk.Operation.changeTrust({
           asset: token 
           //,limit: '1000000'
+        }))
+        .setTimeout(0)
+        .build();
+         return  res.end(transaction.toXDR());
+    });
+
+};//end func
+
+exports.activeWallet = function (req,res){
+	//var id= new Assets(req.body.assetcode,req.body.assetissuer);
+	//var token = new StellarSdk.Asset('ABPA', issuingKeys.publicKey());
+	//var token  = asset.getAssetObj();
+	var requested = StellarSdk.Keypair.fromPublicKey(req.body.accountid); 
+
+  server.loadAccount(requested.publicKey())
+    .then(function(receiver) {
+      var transaction = new StellarSdk.TransactionBuilder(receiver, {
+        fee: conf.BaseFee,
+        networkPassphrase: conf.NetworkPass//'Kuknos-NET'
+      })
+        .addOperation(StellarSdk.Operation.setOptions({
+		homeDomain:conf.HomeDomain,
+		inflationDest:conf.Inflation
         }))
         .setTimeout(0)
         .build();

@@ -1,13 +1,14 @@
 'use strict';
+
 module.exports = function(app) {
   //var kuknosService = require('./serviceController');
   var myfunc = require('./services');
-
-  app.get('/wallet/AccountInfo/:accountId', function(req, res){
+  
+   app.get('/wallet/AccountInfo/:accountId', function(req, res){
         var task = myfunc.accountinfo(req.params.accountId,res);
         console.log(req.params.accountId);
         console.log("Router in get_account_info : ",task);
-});
+  });
 
 	app.get( '/federation',function(req,res){
 		myfunc.federation(req,res);
@@ -31,8 +32,12 @@ module.exports = function(app) {
   	});
 
 
-  app.post('/wallet/activetoken',(req,res)=>{
+  app.post('/wellat/activetoken',(req,res)=>{
 	  myfunc.activeToken(req,res);
+  });
+
+  app.post('/wellat/activewallet',(req,res)=>{
+	  myfunc.activeWallet(req,res);
   });
 
   app.post('/wallet/transfer',(req,res)=>{
