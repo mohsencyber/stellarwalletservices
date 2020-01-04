@@ -53,11 +53,6 @@ exports.accountinfo = async function(req,res){
 			//console.log(results);
 			accInfoJson = results;//JSON.parse(JSON.stringify(results));
 			//console.log(accInfoJson);
-		}).catch(err => {
-			console.log("====>",err);
-			return  res.status(404).json("Account not found");
-			//return res.json(accInfoJson);
-		});
 	if ( !userinfo ){ //userid in accountid
 	SqlQ.query(sqluser,value,function(err,result){
 		if ( err ) console.log(err);
@@ -87,6 +82,11 @@ exports.accountinfo = async function(req,res){
 		    alldata=userinfo;
 		return res.status(200).json(alldata);
 	}
+		}).catch(err => {
+			console.log("====>",err);
+			return  res.status(404).json("Account not found");
+			//return res.json(accInfoJson);
+		});
 	});
 	};//end function
 
