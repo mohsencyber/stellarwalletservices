@@ -32,11 +32,11 @@ module.exports = function(app) {
   	});
 
 
-  app.post('/wellat/activetoken',(req,res)=>{
+  app.post('/wallet/activetoken',(req,res)=>{
 	  myfunc.activeToken(req,res);
   });
 
-  app.post('/wellat/activewallet',(req,res)=>{
+  app.post('/wallet/activewallet',(req,res)=>{
 	  myfunc.activeWallet(req,res);
   });
 
