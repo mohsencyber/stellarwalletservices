@@ -10,6 +10,7 @@ const util =     require('util');
 const Assets =   require('./Assets.js');
 const NationalChecker = require('./nationalcodechecker.js');
 const TransferAuthorize = require('./transferauthorize.js');
+const SmsSender = require('./smssender.js');
 
 global.SHAHKAR_URL=conf.ShahkarUrl;
 
@@ -36,17 +37,14 @@ exports.accountinfo = async function(req,res){
 
 	var sqluser="select id,concat(username,'*',domain) username ,domain,mobilenumber,email,nationalcode,fullname,personality,corpid from users where id=?";
 	var value=[ireq];
-	//var userinfoObj= new Object();
 	var userInfoJson="{}";
 	var accInfoJson="{}";
 		if ( !ireq)
 			return res.json(userInfoJson);
-	//console.log("<"+req.length+">","===");
-	//console.log("<"+ireq.length+">");
 	 await server.accounts()
 	.accountId(ireq)//StellarSdk.Keypair.fromPublicKey(publicKey))
 		.call()
-		.then(function(results) {
+		.then(async function(results) {
 			console.log("accountInfo : ",results.sequence)
 			console.log("accountBalance : ",results.balances)
 			console.log("in getaccount Info : ended ");
@@ -54,7 +52,7 @@ exports.accountinfo = async function(req,res){
 			accInfoJson = results;//JSON.parse(JSON.stringify(results));
 			//console.log(accInfoJson);
 	if ( !userinfo ){ //userid in accountid
-	SqlQ.query(sqluser,value,function(err,result){
+	await SqlQ.query(sqluser,value,function(err,result){
 		if ( err ) console.log(err);
 		if ( result.length ){
 			userInfoJson = result[0];//JSON.parse(JSON.stringify(result[0]));
@@ -82,9 +80,10 @@ exports.accountinfo = async function(req,res){
 		    alldata=userinfo;
 		return res.status(200).json(alldata);
 	}
+
 		}).catch(err => {
 			console.log("====>",err);
-			return  res.status(404).json("Account not found");
+			return res.status(404).end("Account not found");
 			//return res.json(accInfoJson);
 		});
 	});
@@ -129,9 +128,9 @@ exports.submitUser = function(req,res){
 		if ( resv ) {
 		var ticket = uuid.v4();
 		var sms = Math.floor(Math.random() * (9988 - 1111)) + 1111;//234';
-	        var urlhref= "https://sms.magfa.com/magfaHttpService?service=enqueue&username=<.>&password=<.>&from=30009629&to="+req.body.mobilenumber+"&message="+conf.Message+sms;
-	        https.get(urlhref,ress=> {
-			console.log(ress.body);
+	        var smsSender=new SmsSender(conf.SmsUser,conf.SmsPass,conf.SmsPatternId,conf.SmsNumber,conf.SmsUrl);
+                smsSender.sendSms(sms,req.body.mobilenumber,function(res){
+			console.log(res.data);
 		});
 		var sqlstrins = "insert into sessions (accountid,ticket , sms ,timereq,mobilenumber,nationalcode,fullname,personality,corpid) values (?,?,?,now(),?,?,?,?,?)";
 		var sqlstrupd = "update sessions set accountid=?, ticket=? , sms=? , timereq=now() , mobilenumber=? , fullname=?, personality=? , corpid=? where nationalcode=?";

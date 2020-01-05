@@ -8,7 +8,7 @@ module.exports ={
 	NetworkPass:"Kuknos Foundation, Feb 2019",
 	HorizonUrl:"http://localhost:4443/",
 	ShahkarUrl:"https://esbapi.pec.ir/ApiManager/Vas/Shahkar",
-	//HorizonUrl:"http://srv1.tosan-kuknos.com/horizon/",
+	//HorizonUrl:"https://hz1-test.kuknos.org",
 	TimeOut:"1000",
 	Message:"Tecvest Code: ",
 	SourceControl:true,
@@ -16,5 +16,10 @@ module.exports ={
 	Inflation:"GBVIQDI3V3ZOPHDMZFNM2TIEQWCGQOYYOGRMWGS3EYHK2XOYYTVERDYZ",
 	AssetCode:"ABPARS",
 	AssetID:"GBTJ6RIFWRAB2OOJE62V6NIAMSARRFJ6QL2V6JP6OLMGKLVWW7G5YIL5",
-	DB_Host:"localhost"
+	DB_Host:"localhost",
+	SmsUrl:"http://ippanel.com/api/select",
+	SmsUser:"09365884717",
+	SmsPass:"smar***ind",
+	SmsPatternId:"i0m044ot3q",
+	SmsNumber:"5000125475"
 	};
