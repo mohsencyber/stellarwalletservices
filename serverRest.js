@@ -34,12 +34,14 @@ else
 	global.SHAHKAR_PASS = "xxx99!";
 
 
-;
+  var wallet =  express();
   console.log(DB_HOST);
   app.use(bodyParser.urlencoded({ extended: true }));
   app.use(bodyParser.json());
+  app.use('/wallet',wallet);
 
   var routes = require('./Routes'); //importing route
+  routes(wallet);
   routes(app);
   //router.use(function(req,res,routes){
   //	  routes(router);

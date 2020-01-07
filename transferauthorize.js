@@ -20,6 +20,22 @@ class TransferAuthorize{
                          }
 		callback( true );
 	}
+        async isAssetPermitted(srcTrns,asset,callback){
+		var permitted= true;
+		if ( this.conff.SourceControl ) {
+			assetcodeFilter=asset.getCode();
+			assetissuFilter=asset.getIssuer();
+			sqlstr="select * from validsource a left join assets b on a.assetid=b.id where a.accountid=? and b.assetcode = ? and b.assetissuer = ? ";
+                        values = [srcTrns,assetcodeFilter,assetissuFilter];
+			await this.SqlQ.query(sqlstr,values,function(err,result){
+                                        if (err) {console.log(err);permitted=false;}
+                                        if (!result.length )
+                                                permitted = false;
+					callback(permitted);
+                                });
+		}else
+			callback(permitted);
+	}
 
 	async isOperationPermitted(srcTrns,operations, callback){
 		 if ( this.conff.SourceControl ){
@@ -58,7 +74,7 @@ class TransferAuthorize{
                 });//foreach
                 callback( !transferNotPermited );
           }//end if control
-                callback( true) ;//res.status(403).end("Transaction not permitted");
+		else callback( true) ;//res.status(403).end("Transaction not permitted");
 	}
 }
 

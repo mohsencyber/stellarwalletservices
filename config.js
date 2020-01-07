@@ -21,5 +21,7 @@ module.exports ={
 	SmsUser:"09365884717",
 	SmsPass:"smar***ind",
 	SmsPatternId:"i0m044ot3q",
-	SmsNumber:"5000125475"
+	SmsNumber:"5000125475",
+	WalletPubKey:"",
+	WalletKeyInternal:""
 	};
