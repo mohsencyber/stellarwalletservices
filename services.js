@@ -29,6 +29,18 @@ async function getAccountInfo(accid){
 	return resultJson;
 };
 
+async function amountDecimalControl(amount,asset){
+  var result = true;
+  await StellarSdk.StellarTomlResolver.resolve(conf.HomeDomain).then(response => {
+           response.CURRENCIES.forEach(element => {
+                   if ( element.code!=asset.code() )
+                           return;
+                if (parseInt(amount.substr(-7+element.display_decimals))!=0)
+                        result=false;
+           });
+   });
+  return result;
+}
 exports.accountinfo = async function(req,res){
 //results = 
 	var result;
@@ -353,7 +365,9 @@ exports.buyAssets = async function(req,res){
 	var source = StellarSdk.Keypair.fromSecret(secretKey);
 	var transferAuth = new TransferAuthorize(SqlQ,StellarSdk,conf);
         //var destination= StellarSdk.Keypair.fromPublicKey(rows.accountid);
-	await transferAuth.isAssetPermitted(source.publicKey(),asset.getAssetObj(SqlQ),async function(results){
+	var assetObj= asset.getAssetObj(SqlQ);
+	if ( await amountDecimalControl(amount,assetObj) ){
+	await transferAuth.isAssetPermitted(source.publicKey(),assetObj,async function(results){
 		if (results){
 		await destinationID.getAccountID(SqlQ, async function(destinationid){
 			if ( !destinationid )
@@ -369,13 +383,14 @@ exports.buyAssets = async function(req,res){
 	                                amount:'0.5',
 	                        }))*/.addOperation(StellarSdk.Operation.payment({
 		                        destination: destinationid,
-	                        	asset:asset.getAssetObj(SqlQ),
+	                        	asset:assetObj,
 	                	        amount:amount,
 	        	        })).setTimeout(0)
 		                .build();
 				transaction.sign(source);
 	                        await server.submitTransaction(transaction).then(function(subresult){
-					return res.send(subresult);
+					console.log(subresult.ledger);
+					return res.send(subresult.ledger);
 				}).catch(err =>{
 	                                console.log("[ERROR]submiterror:"+err.response);
 	                                return  res.status(406).send(err.response.data.extras.result_codes);
@@ -389,6 +404,9 @@ exports.buyAssets = async function(req,res){
 		else
 			return res.status(401).end("transfer not permitted");
 	});//isPermitted
+	}else{
+		return  res.status(401).end("amount is incorrect");
+	}
 }
 
 exports.federation = function(req,res){
