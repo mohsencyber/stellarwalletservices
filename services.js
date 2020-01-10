@@ -29,18 +29,6 @@ async function getAccountInfo(accid){
 	return resultJson;
 };
 
-async function amountDecimalControl(amount,asset){
-  var result = true;
-  await StellarSdk.StellarTomlResolver.resolve(conf.HomeDomain).then(response => {
-           response.CURRENCIES.forEach(element => {
-                   if ( element.code!=asset.code() )
-                           return;
-                if (parseInt(amount.substr(-7+element.display_decimals))!=0)
-                        result=false;
-           });
-   });
-  return result;
-}
 exports.accountinfo = async function(req,res){
 //results = 
 	var result;
@@ -113,7 +101,7 @@ exports.postTransaction = async function(req,res){
         //var output = transaction.toXDR();
 	//var trns = myXdr.Envelope.fromXDR(req);
 	var operations = transaction.toEnvelope().tx().operations();
-	var transferAuth = new TransferAuthorize(SqlQ,StellarSdk,conf);
+	var transferAuth = new TransferAuthorize(SqlQ,StellarSdk,conf,server);
 	await transferAuth.isOperationPermitted(srcTrns,operations, async function(result){
 		if ( result ){
         		await server.submitTransaction(transaction).then (results => {
@@ -211,7 +199,7 @@ exports.submitConfirm = async function(req,res){
 			   //SqlQ.end();
 	                  var source = StellarSdk.Keypair.fromSecret(secretKey);
 			  var destination= StellarSdk.Keypair.fromPublicKey(rows.accountid);
-			  var transferAuth = new TransferAuthorize(SqlQ,StellarSdk,conf);
+			  var transferAuth = new TransferAuthorize(SqlQ,StellarSdk,conf,server);
 		try{
 		  await transferAuth.isNativePermitted(source.publicKey(),async function(result){
 	          if (result){
@@ -363,11 +351,10 @@ exports.buyAssets = async function(req,res){
 	var asset  = new Assets(req.body.assetcode,req.body.assetissuer,req.body.assetid);
 	console.log("buy asset for :"+destinationID);
 	var source = StellarSdk.Keypair.fromSecret(secretKey);
-	var transferAuth = new TransferAuthorize(SqlQ,StellarSdk,conf);
+	var transferAuth = new TransferAuthorize(SqlQ,StellarSdk,conf,server);
         //var destination= StellarSdk.Keypair.fromPublicKey(rows.accountid);
 	var assetObj= asset.getAssetObj(SqlQ);
-	if ( await amountDecimalControl(amount,assetObj) ){
-	await transferAuth.isAssetPermitted(source.publicKey(),assetObj,async function(results){
+	await transferAuth.isAssetPermitted(source.publicKey(),amount,assetObj,async function(results){
 		if (results){
 		await destinationID.getAccountID(SqlQ, async function(destinationid){
 			if ( !destinationid )
@@ -404,9 +391,6 @@ exports.buyAssets = async function(req,res){
 		else
 			return res.status(401).end("transfer not permitted");
 	});//isPermitted
-	}else{
-		return  res.status(401).end("amount is incorrect");
-	}
 }
 
 exports.federation = function(req,res){

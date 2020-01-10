@@ -1,10 +1,30 @@
 
 class TransferAuthorize{
-	constructor ( sqlq, stellarsdk ,conf){
+	constructor ( sqlq, stellarsdk ,conf,server){
 		this.SqlQ=sqlq;
 		this.StellarSdk=stellarsdk;
-		this.conff=conf
+		this.conff=conf;
+		this.server=server;
 	}
+
+	async function amountDecimalControl(amount,asset,callback){
+	  var result = true;
+		await this.server.accounts()
+	        .accountId(asset.getIssuer())//StellarSdk.Keypair.fromPublicKey(publicKey))
+                .call()
+                .then(async function(results) {
+		  await this.StellarSdk.StellarTomlResolver.resolve(results.home_domain).then(response => {
+	         	  response.CURRENCIES.forEach(element => {
+	            	       if ( element.code!=asset.getCode() )
+	                	           return;
+	               	 	if (parseInt(amount.substr(-7+element.display_decimals))!=0)
+	        	                result=false;
+	        	   });
+	  	 });
+	  	callback(result);
+		});
+	}
+
 	async isNativePermitted(srcTrns,callback){
  		if (this.conff.SourceControl &&  this.conff.NativeControl )
                         {
@@ -20,24 +40,31 @@ class TransferAuthorize{
                          }
 		callback( true );
 	}
-        async isAssetPermitted(srcTrns,asset,callback){
+        async isAssetPermitted(srcTrns,amount,asset,callback){
 		var permitted= true;
-		if ( this.conff.SourceControl ) {
-			assetcodeFilter=asset.getCode();
-			assetissuFilter=asset.getIssuer();
-			sqlstr="select * from validsource a left join assets b on a.assetid=b.id where a.accountid=? and b.assetcode = ? and b.assetissuer = ? ";
-                        values = [srcTrns,assetcodeFilter,assetissuFilter];
-			await this.SqlQ.query(sqlstr,values,function(err,result){
-                                        if (err) {console.log(err);permitted=false;}
-                                        if (!result.length )
-                                                permitted = false;
-					callback(permitted);
-                                });
-		}else
-			callback(permitted);
-	}
+		await amountDecimalControl(amount,asset,function(amresult){
+	        if ( amresult ) {
+			if ( this.conff.SourceControl ) {
+				assetcodeFilter=asset.getCode();
+				assetissuFilter=asset.getIssuer();
+				sqlstr="select * from validsource a left join assets b on a.assetid=b.id where a.accountid=? and b.assetcode = ? and b.assetissuer = ? ";
+                        	values = [srcTrns,assetcodeFilter,assetissuFilter];
+				await this.SqlQ.query(sqlstr,values,function(err,result){
+                	                        if (err) {console.log(err);permitted=false;}
+          	                              if (!result.length )
+                                        	        permitted = false;
+						callback(permitted);
+                        	        });
+			}else
+				callback(permitted);
+		}else{
+			callback(false);
+		}
+	});
+}
 
 	async isOperationPermitted(srcTrns,operations, callback){
+		 var inamount;
 		 if ( this.conff.SourceControl ){
                 //var operations = transaction.toEnvelope().tx().operations();
                   var transferNotPermited=false;
@@ -50,15 +77,17 @@ class TransferAuthorize{
                           var sqlstr;
                           var values;
                         try{
-                                if (this.StellarSdk.Asset.fromOperation(element.body().paymentOp().asset()).isNative()){
+				var inAsset = this.StellarSdk.Asset.fromOperation(element.body().paymentOp().asset());
+				inamount = element.body().paymentOp().amount();
+                                if ( inAsset.isNative()){
                                         if ( this.conff.NativeControl ){
                                                 sqlstr = "select * from validsource a where a.accountid=? and a.assetid is null";
                                                 values = [srcTrns];
                                         }else
                                                 return;
                                 }else{
-                                        asstcodeFilter=this.StellarSdk.Asset.fromOperation(element.body().paymentOp().asset()).getCode();
-                                        asstissuFilter=this.StellarSdk.Asset.fromOperation(element.body().paymentOp().asset()).getIssuer();
+                                        asstcodeFilter=inAsset.getCode();
+                                        asstissuFilter=inAsset.getIssuer();
                                         sqlstr = "select * from validsource a left join assets b on a.assetid=b.id where a.accountid=? and b.assetcode = ? and b.assetissuer = ? ";
                                         values = [srcTrns,asstcodeFilter,asstissuFilter];
                                 }
@@ -66,6 +95,11 @@ class TransferAuthorize{
                                         if (err) return console.log(err);
                                         if (!result.length )
                                                 transferNotPermited = true;
+					else if ( !inAsset.isNative() ){
+					 await amountDecimalControl(inamount,inAsset,function(inresult){
+						 transferNotPermited = inresult;
+					 });
+					}
                                 });
 
                         }catch(e){
