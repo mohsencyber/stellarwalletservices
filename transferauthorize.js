@@ -7,7 +7,7 @@ class TransferAuthorize{
 		this.server=server;
 	}
 
-	async function amountDecimalControl(amount,asset,callback){
+	async amountDecimalControl(amount,asset,callback){
 	  var result = true;
 		await this.server.accounts()
 	        .accountId(asset.getIssuer())//StellarSdk.Keypair.fromPublicKey(publicKey))
@@ -42,7 +42,7 @@ class TransferAuthorize{
 	}
         async isAssetPermitted(srcTrns,amount,asset,callback){
 		var permitted= true;
-		await amountDecimalControl(amount,asset,function(amresult){
+		await amountDecimalControl(amount,asset,async function(amresult){
 	        if ( amresult ) {
 			if ( this.conff.SourceControl ) {
 				assetcodeFilter=asset.getCode();
@@ -91,7 +91,7 @@ class TransferAuthorize{
                                         sqlstr = "select * from validsource a left join assets b on a.assetid=b.id where a.accountid=? and b.assetcode = ? and b.assetissuer = ? ";
                                         values = [srcTrns,asstcodeFilter,asstissuFilter];
                                 }
-                                await this.SqlQ.query(sqlstr,values,function(err,result){
+                                await this.SqlQ.query(sqlstr,values,async function(err,result){
                                         if (err) return console.log(err);
                                         if (!result.length )
                                                 transferNotPermited = true;
