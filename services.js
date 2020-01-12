@@ -90,7 +90,7 @@ exports.accountinfo = async function(req,res){
 	};//end function
 
 
-exports.postTransaction = async function(req,res){
+exports.postTransaction = function(req,res){
 //results =
         var result;
 	//console.log(req);
@@ -102,9 +102,10 @@ exports.postTransaction = async function(req,res){
 	//var trns = myXdr.Envelope.fromXDR(req);
 	var operations = transaction.toEnvelope().tx().operations();
 	var transferAuth = new TransferAuthorize(SqlQ,StellarSdk,conf,server);
-	await transferAuth.isOperationPermitted(srcTrns,operations, async function(result){
+	transferAuth.isOperationPermitted(srcTrns,operations, (result)=>{
 		if ( result ){
-        		await server.submitTransaction(transaction).then (results => {
+			console.log("isPermitted")
+        		server.submitTransaction(transaction).then (results => {
 				return res.send(JSON.stringify(results));
 			}).catch(err =>{ 
 				console.log(err.response.data.extras.result_codes);
@@ -113,6 +114,8 @@ exports.postTransaction = async function(req,res){
 		}
 		else 
 			return res.status(401).send("transfer not permitted.");
+	}).catch( err=>{
+		console.log(err);
 	});
 };
 
@@ -257,9 +260,10 @@ exports.submitConfirm = async function(req,res){
  };
 
 exports.activeToken = async function (req,res){
+	console.log(req.body.assetid);
 	var asset = new Assets(req.body.assetcode,req.body.assetissuer,req.body.assetid);
 	//var token = new StellarSdk.Asset('ABPA', issuingKeys.publicKey());
-	var token  = asset.getAssetObj(SqlQ);
+	var token  = asset.getAssetObj(SqlQ,async (token)=>{
 	var requested = StellarSdk.Keypair.fromPublicKey(req.body.accountid); 
 
   await server.loadAccount(requested.publicKey())
@@ -275,7 +279,8 @@ exports.activeToken = async function (req,res){
         .setTimeout(0)
         .build();
          return  res.end(transaction.toXDR());
-    });
+    }).catch(err=>{console.log(err)});
+	});
 
 };//end func
 
@@ -316,11 +321,15 @@ exports.transferTo = async function(req,res){
 	var destinationID =  new KuknosID(req.body.destinationid);
 	var amount = req.body.amount;
 	var asset = new Assets(req.body.assetcode,req.body.assetissuer,req.body.assetid);
-	console.log(req.body.assetcode);
+	var assetObj; 
+	assetObj = await asset.getAssetObj(SqlQ,async function(assetObj){ //});//.then(async assetObj =>{ //assetObj=result 
+	//});
+	console.log(assetObj);
 	await destinationID.getAccountID(SqlQ, async function(destinationid){
 		console.log("==>"+destinationid+"<==");
 		if ( !destinationid )
 			return res.status(404).end("destination Accound not found");
+		console.log(assetObj,accountID);
 		const accountSrc = await server.loadAccount(accountID).then(accountSrc =>{
 		//.catch(errors=>{
 			//console.log("account error: ", errors);
@@ -331,7 +340,7 @@ exports.transferTo = async function(req,res){
 			networkPassphrase: conf.NetworkPass
 		}).addOperation(StellarSdk.Operation.payment({
       			destination: destinationid,
-			asset:asset.getAssetObj(SqlQ),
+			asset: assetObj,//asset.getAssetObj(SqlQ),
 			amount:amount,
 		})).setTimeout(0)
 		.build();
@@ -341,6 +350,7 @@ exports.transferTo = async function(req,res){
                         return res.status(404).end("Account not found");
                 });
 
+	});
 	});
 
 };//end func
@@ -353,7 +363,7 @@ exports.buyAssets = async function(req,res){
 	var source = StellarSdk.Keypair.fromSecret(secretKey);
 	var transferAuth = new TransferAuthorize(SqlQ,StellarSdk,conf,server);
         //var destination= StellarSdk.Keypair.fromPublicKey(rows.accountid);
-	var assetObj= asset.getAssetObj(SqlQ);
+	var assetObj= asset.getAssetObj(SqlQ, async (assetObj)=>{
 	await transferAuth.isAssetPermitted(source.publicKey(),amount,assetObj,async function(results){
 		if (results){
 		await destinationID.getAccountID(SqlQ, async function(destinationid){
@@ -391,6 +401,7 @@ exports.buyAssets = async function(req,res){
 		else
 			return res.status(401).end("transfer not permitted");
 	});//isPermitted
+      });//getassetObj
 }
 
 exports.federation = function(req,res){

@@ -49,7 +49,9 @@ module.exports = function(app) {
 
   app.post('/buyassets',(req,res)=>{
 	var  secureKey= Stellar_Sdk.Keypair.fromPublicKey(conf.WalletPubKey);
-        if ( secureKey.verify(config.WalletKeyInternal,Buffer.from(req.body.securekey ,'base64')) ){
+	var WalletKeyInt = req.body.destinationid+","+req.body.amount+","+req.body.assetid;
+	  console.log(WalletKeyInt);
+        if ( secureKey.verify(WalletKeyInt,Buffer.from(req.body.securekey ,'base64')) ){
 	  myfunc.buyAssets(req,res);
 	}else {
 		console.log("Request Not Verified.");

@@ -4,11 +4,11 @@ module.exports ={
 	CreateAmnt: '2',
 	AllowHttp: true,
 	BaseFee:50000,
-	//NetworkPass:"Kuknos-NET",
-	NetworkPass:"Kuknos Foundation, Feb 2019",
-	HorizonUrl:"http://localhost:4443/",
+	NetworkPass:"Kuknos-NET",
+	//NetworkPass:"Kuknos Foundation, Feb 2019",
+	//HorizonUrl:"http://localhost:4443/",
 	ShahkarUrl:"https://esbapi.pec.ir/ApiManager/Vas/Shahkar",
-	//HorizonUrl:"https://hz1-test.kuknos.org",
+	HorizonUrl:"https://hz1-test.kuknos.org",
 	TimeOut:"1000",
 	Message:"Tecvest Code: ",
 	SourceControl:true,
@@ -22,6 +22,6 @@ module.exports ={
 	SmsPass:"smar***ind",
 	SmsPatternId:"i0m044ot3q",
 	SmsNumber:"5000125475",
-	WalletPubKey:"",
+	WalletPubKey:"GBTTZLBSY6YETCTYP25P3PQKROODZRYNR5EKVORZHFYLP2JQMHIDOCWB",
 	WalletKeyInternal:""
 	};
