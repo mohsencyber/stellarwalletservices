@@ -47,9 +47,17 @@ module.exports = function(app) {
 	  myfunc.transferTo(req,res);
   });
 
+  app.post('/buyassetsthirdparty',(req,res)=>{
+	  myfunc.buyAssetsThird(req,res);
+  });
+
+  app.post('/transactioninquiry',(req,res)=>{
+	  myfunc.TransInquiry(req,res);
+  });
+
   app.post('/buyassets',(req,res)=>{
-	var  secureKey= Stellar_Sdk.Keypair.fromPublicKey(conf.WalletPubKey);
-	var WalletKeyInt = req.body.destinationid+","+req.body.amount+","+req.body.assetid;
+	var  secureKey= Stellar_Sdk.Keypair.fromPublicKey(config.WalletPubKey);
+	var WalletKeyInt = req.body.destinationid+","+req.body.amount+","+req.body.assetid+","+req.body.id;
 	  console.log(WalletKeyInt);
         if ( secureKey.verify(WalletKeyInt,Buffer.from(req.body.securekey ,'base64')) ){
 	  myfunc.buyAssets(req,res);

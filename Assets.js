@@ -26,9 +26,10 @@ Assets.prototype.setAssetFromId = async function(SqlQ,callback){
 			if ( result ){
 				this.assetCode=result[0].assetcode;
 				this.assetIssuer=result[0].assetissuer;
+				this.truster=result[0].truster;
 				//console.log(this.assetCode,this.assetIssuer);
 				//console.log("===>",this.assetCode,this.assetIssuer);
-				callback(true,this.assetCode,this.assetIssuer);
+				callback(true,this.assetCode,this.assetIssuer,this.truster);
 			}else
 				callback(false);
 		});
@@ -42,18 +43,32 @@ Assets.prototype.setAssetFromId = async function(SqlQ,callback){
 	
 }
 
+Assets.prototype.getAssetTruster = async function( SqlQ , callback ){
+	var sqlstr="select * from assets where assetcode = ? and assetissuer = ?";
+                var values=[this.assetCode,this.assetIssuer];
+                await SqlQ.query( sqlstr ,values ,(err,result)=>{
+                        if ( err) callback(false);
+                        if ( result ){
+                                this.truster=result[0].truster;
+                                callback(this.truster);
+                        }else
+                                callback();
+                }
+}
+
 Assets.prototype.getAssetObj = async function(SqlQ,callback){
 		console.log("=>",this.assetCode,this.assetIssuer);
-	await this.setAssetFromId(SqlQ,(result,assetcode,assetissuer)=>{
+	await this.setAssetFromId(SqlQ,(result,assetcode,assetissuer,truster)=>{
 	if ( result ) {
 		this.assetCode=assetcode;
 		this.assetIssuer=assetissuer;
+		this.truster=truster;
 		console.log(this.assetCode,this.assetIssuer);
 		if ( this.assetCode && this.assetIssuer &&
 		      this.assetCode.length>0 && this.assetIssuer.length>0 ){
 
 			console.log("is not Native");
-			callback(new inStellarSdk.Asset(this.assetCode,this.assetIssuer));
+			callback(new inStellarSdk.Asset(this.assetCode,this.assetIssuer),truster);
 		}else{
 			console.log("is Native");
 			callback(new inStellarSdk.Asset.native());
@@ -61,6 +76,7 @@ Assets.prototype.getAssetObj = async function(SqlQ,callback){
             }
        });
 }
+
 
 module.exports = Assets;
 

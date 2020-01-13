@@ -16,22 +16,22 @@ else
 if ( process.env.DB_USER )
 	global.DB_USER = process.env.DB_USER;
 else 
-	global.DB_USER ='tecvest';
+	global.DB_USER ='farhadi';
 
 if ( process.env.DB_PASS )
 	global.DB_PASS = process.env.DB_PASS;
 else 
-	global.DB_PASS ='tecvest';
+	global.DB_PASS ='123456';
 
 if ( process.env.SHAHKAR_USER )
 	global.SHAHKAR_USER = process.env.SHAHKAR_USER;
 else 
-	global.SHAHKAR_USER = "xxxxxkuknos.org";
+	global.SHAHKAR_USER = "tech@kuknos.org";
 
 if ( process.env.SHAHKAR_PASS )
 	global.SHAHKAR_PASS = process.env.SHAHKAR_PASS;
 else 
-	global.SHAHKAR_PASS = "xxx99!";
+	global.SHAHKAR_PASS = "Ci699!";
 
 
   var wallet =  express();

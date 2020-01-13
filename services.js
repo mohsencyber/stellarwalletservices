@@ -11,6 +11,7 @@ const Assets =   require('./Assets.js');
 const NationalChecker = require('./nationalcodechecker.js');
 const TransferAuthorize = require('./transferauthorize.js');
 const SmsSender = require('./smssender.js');
+const BigNumber = require('BigNumber.js');
 
 global.SHAHKAR_URL=conf.ShahkarUrl;
 
@@ -262,6 +263,12 @@ exports.submitConfirm = async function(req,res){
 exports.activeToken = async function (req,res){
 	console.log(req.body.assetid);
 	var asset = new Assets(req.body.assetcode,req.body.assetissuer,req.body.assetid);
+	var memotype = StellarSdk.MemoNone;
+	if ( req.body.memotype == 'hash' ) 
+		memotype = StellarSdk.MemoHash;
+	   else if ( req.body.memotype == 'text' )
+		memotype = StellarSdk.MemoText;
+	var memoObj = new StellarSdk.Memo(memotype,req.body.memo);
 	//var token = new StellarSdk.Asset('ABPA', issuingKeys.publicKey());
 	var token  = asset.getAssetObj(SqlQ,async (token)=>{
 	var requested = StellarSdk.Keypair.fromPublicKey(req.body.accountid); 
@@ -269,6 +276,7 @@ exports.activeToken = async function (req,res){
   await server.loadAccount(requested.publicKey())
     .then(function(receiver) {
       var transaction = new StellarSdk.TransactionBuilder(receiver, {
+	memo: memoObj,
         fee: conf.BaseFee,
         networkPassphrase: conf.NetworkPass//'Kuknos-NET'
       })
@@ -289,11 +297,18 @@ exports.activeWallet = async function (req,res){
 	//var token = new StellarSdk.Asset('ABPA', issuingKeys.publicKey());
 	//var token  = asset.getAssetObj();
 	var requested = StellarSdk.Keypair.fromPublicKey(req.body.accountid); 
+	var memotype = StellarSdk.MemoNone;
+        if ( req.body.memotype == 'hash' )
+                memotype = StellarSdk.MemoHash;
+           else if ( req.body.memotype == 'text' )
+                memotype = StellarSdk.MemoText;
+        var memoObj = new StellarSdk.Memo(memotype,req.body.memo);
 
   await server.loadAccount(requested.publicKey())
     .then(function(receiver) {
       var transaction = new StellarSdk.TransactionBuilder(receiver, {
-        fee: conf.BaseFee,
+	memo: memoObj,
+	fee: conf.BaseFee,
         networkPassphrase: conf.NetworkPass//'Kuknos-NET'
       })
         .addOperation(StellarSdk.Operation.setOptions({
@@ -322,6 +337,13 @@ exports.transferTo = async function(req,res){
 	var amount = req.body.amount;
 	var asset = new Assets(req.body.assetcode,req.body.assetissuer,req.body.assetid);
 	var assetObj; 
+	var memotype = StellarSdk.MemoNone;
+        if ( req.body.memotype == 'hash' )
+                memotype = StellarSdk.MemoHash;
+           else if ( req.body.memotype == 'text' )
+                memotype = StellarSdk.MemoText;
+        var memoObj = new StellarSdk.Memo(memotype,req.body.memo);
+	
 	assetObj = await asset.getAssetObj(SqlQ,async function(assetObj){ //});//.then(async assetObj =>{ //assetObj=result 
 	//});
 	console.log(assetObj);
@@ -336,6 +358,7 @@ exports.transferTo = async function(req,res){
 			//return res.status(404).end("Account not found");
 		//});
 		const transaction = new StellarSdk.TransactionBuilder(accountSrc, {
+			memo: memoObj,
 			fee:conf.BaseFee,
 			networkPassphrase: conf.NetworkPass
 		}).addOperation(StellarSdk.Operation.payment({
@@ -355,54 +378,147 @@ exports.transferTo = async function(req,res){
 
 };//end func
 
-exports.buyAssets = async function(req,res){
-	var  destinationID = new KuknosID(req.body.destinationid);
-	var amount = req.body.amount;
-	var asset  = new Assets(req.body.assetcode,req.body.assetissuer,req.body.assetid);
-	console.log("buy asset for :"+destinationID);
-	var source = StellarSdk.Keypair.fromSecret(secretKey);
-	var transferAuth = new TransferAuthorize(SqlQ,StellarSdk,conf,server);
-        //var destination= StellarSdk.Keypair.fromPublicKey(rows.accountid);
-	var assetObj= asset.getAssetObj(SqlQ, async (assetObj)=>{
-	await transferAuth.isAssetPermitted(source.publicKey(),amount,assetObj,async function(results){
-		if (results){
-		await destinationID.getAccountID(SqlQ, async function(destinationid){
-			if ( !destinationid )
-				return res.status(404).end("Account Not Found");
-			//var destinationId = StellarSdk.Keypair.fromPublicKey(rows.accountid);
-			const accountSrc = await server.loadAccount(source.publicKey()).then(async accountSrc =>{
-	        	        const transaction = new StellarSdk.TransactionBuilder(accountSrc, {
-		                       	fee:conf.BaseFee,
-	                	        networkPassphrase: conf.NetworkPass
-	        	        })/*.addOperation(StellarSdk.Operation.payment({
-	                                destination: destinationid,
-	                                asset:new StellarSdk.Asset.native,
-	                                amount:'0.5',
-	                        }))*/.addOperation(StellarSdk.Operation.payment({
-		                        destination: destinationid,
-	                        	asset:assetObj,
-	                	        amount:amount,
-	        	        })).setTimeout(0)
-		                .build();
-				transaction.sign(source);
-	                        await server.submitTransaction(transaction).then(function(subresult){
-					console.log(subresult.ledger);
-					return res.send(subresult.ledger);
-				}).catch(err =>{
-	                                console.log("[ERROR]submiterror:"+err.response);
-	                                return  res.status(406).send(err.response.data.extras.result_codes);
-	                        });
-	                }).catch(errors=>{
-	                        console.log("[ERROR]submiterror: ", errors);
-	                        return res.status(404).end("Account not found");
-        	        });
-		});
-	}//not permitted
+exports.buyAssetsTrustNeed = async function(sourceid,sequence,req,callback){
+
+	var accsource = new KuknosID(sourceid);
+	var accountSrc;
+	accsource.getAccountID(SqlQ, (sourceID)=>{
+	  if (sourceID){
+  	   accountSrc = new StellarBase.Account(sourceID,sequence);
+	   var  destinationID = new KuknosID(req.body.destinationid);
+           var id = req.body.id;
+           var amount = req.body.amount;
+           var asset  = new Assets(req.body.assetcode,req.body.assetissuer,req.body.assetid);
+           console.log("buy asset for :"+destinationID);
+           //var sourceKeyIssuer = StellarSdk.Keypair.fromSecret(secretKey);
+           var transferAuth = new TransferAuthorize(SqlQ,StellarSdk,conf,server);
+           var memotype = StellarSdk.MemoNone;
+           if ( req.body.memotype == 'hash' )
+                 memotype = StellarSdk.MemoHash;
+           else if ( req.body.memotype == 'text' )
+                 memotype = StellarSdk.MemoText;
+           var memoObj = new StellarSdk.Memo(memotype,req.body.memo);
+           //var destination= StellarSdk.Keypair.fromPublicKey(rows.accountid);
+           //find id in table
+	   var truster= asset.getAssetTruster(SqlQ,(truster)=>{
+	   if ( truster ){
+	   var signtruster= new StellarSdk.Keypair.fromSecret(truster);
+           var assetObj= asset.getAssetObj(SqlQ, async (assetObj)=>{
+           await transferAuth.isAssetPermitted(source.publicKey(),amount,assetObj,async function(results){
+                 if (results){
+                 await destinationID.getAccountID(SqlQ, async function(destinationid){
+                         if ( destinationid ){
+	   var trans = new StellarBase.TransactionBuilder(accountSrc,{
+ 		memo:memoObj,
+		fee:conf.BaseFee,
+		networkPassphrase:conf.NetworkPass
+	   }).addOperation(StellarSdk.Operation.allowTrust({
+			trustor:destinationid,
+			assetCode:req.body.assetcode,
+			authorize:true,
+			source:req.body.issuer
+		}))
+		.addOperation(StellarSdk.Operation.payment({
+			destination:destinationid,
+			asset:assetObj,
+			amount:amount
+		}))
+		.addOperation(StellarSdk.Operation.allowTrust({
+			trustor:destinationid,
+                        assetCode:req.body.assetcode,
+                        authorize:false,
+                        source:req.body.issuer
+		}))
+		.setTimeout(0)
+		.build();
+		trans.sign(signtruster);
+				callback(,trans.toXDR('base64'));
+		   }//if destinationid
+			else
+			callback( 404,"destination not found");
+		  })//getAccountid
+	        }//if permitted
+		 else 
+		  callback(401,"Asset transfer not permitted");
+	       })//assetPermitted
+	      })//getAssetObj
+	     }//if truster
 		else
-			return res.status(401).end("transfer not permitted");
-	});//isPermitted
-      });//getassetObj
+			callback(400,"truster not define!!!");
+	    })//getTruster
+	  }//if sourceID
+		else 
+			callback(400,"sourceid not found!!!");
+	})//getsourceID
+
+};
+exports.buyAssetsThird = async function(req,res){
+	var sourceid = req.body.sourceid;
+	var sequencein = req.body.sequence;
+	var sequence = (new BigNumber(sequencein)).sub(1);
+	console.log(`Sequence ${sequencein} `);
+	await buyAssetsTrustNeed(sourceid,sequence,req, async (err,result)=>{
+		console.log(`Transaction response ${err} and ${result} `);
+		if ( err ) 
+			return  res.status(401).send(result);
+		return res.send(result);
+	});
 }
+
+exports.TransInquiry= async function (req,res){
+
+}
+exports.buyAssets = async function(req,res){
+	var sourceID= publicKey;
+	var srcAcc = await server.loadAccount(sourceID);
+	var sequence=srcAcc.sequenceNumber();
+	var source = StellarSdk.Keypair.fromSecret(secretKey);
+	var id = req.body.id;
+        var sqlStr = " select * from buyrequest where requestid=? and destinationid=? and status='success' "; 
+	var insSqlStr="insert into buyrequest (requestid,destinationid) values(?,?)";
+	var Values=[id,req.body.destinationid];
+	var updateStr="update buyrequest status='success' where requestid=? and destinationid=?";
+	var updateErrStr="update buyrequest status='fail' where requestid=? and destinationid=?";
+	SqlQ.query(sqlStr,Values,(err,resultid)=>{
+	if ( resultid.length || err )
+		return res.status(401).send("Transaction duplicate.");
+	}else{
+	    try{
+		SqlQ.query(insSqlStr,Values, async (error,results)=>{
+			if (error )
+				return  res.status(401).end("Internal server Error.");
+			await buyAssetsTrustNeed(sourceID,sequence,req, async (err,result)=>{
+			if ( err ) {
+				console.log(result);
+				return res.status(err).send(result);
+			}else {
+				var trans = new StellarBase.Transaction(result,conf.NetworkPass); 
+				trans.sign(source);
+			        SqlQ.query(updateStr,Values,(error,results)=>{
+				  if ( !error ){
+				   await server.submitTransaction(trans).then(subres=>{
+				   	console.log(subres.ledger);
+				   	return res.end(subres.ledger);
+				   }).catch(err=>{
+					   console.log(err);
+					  throw "rollback";
+				     })
+				  }else
+					return  res.status(401).end("Internal server error");
+				})
+			   }
+			});
+		});
+	    }catch(error){
+		     //insert id , fail into buyrequest
+		   if ( error == "rollback" )
+		   	SqlQ.query(updateErrStr,Values,(err,ress)=>{
+			  	 return res.status(401).send(err);
+		   	});
+	    }
+	  }
+     });
+};
 
 exports.federation = function(req,res){
 	var values=req.query.q.split("*");
