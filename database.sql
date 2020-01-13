@@ -3,7 +3,8 @@ DROP TABLE IF EXISTS `assets`;
 CREATE TABLE `assets` (
   `id` int(6) auto_increment Primary key,
   `assetissuer` varchar(60) DEFAULT NULL,
-  `assetcode` varchar(20) DEFAULT NULL
+  `assetcode` varchar(20) DEFAULT NULL,
+  `trustsigner` varchar(60) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 DROP TABLE IF EXISTS `sessions`;
@@ -45,3 +46,12 @@ CREATE TABLE `validsource` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=latin1;
 
+DROP TABLE IF EXISTS `buyrequest`;
+CREATE TABLE `buyrequest` (
+  `id` int(12) NOT NULL AUTO_INCREMENT,
+  `requestid` varchar(255) CHARACTER SET utf8 DEFAULT NULL,
+  `destinationid` varchar(255) DEFAULT NULL,
+  `status` varchar(100) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uniq_key` (`requestid`,`destinationid`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;

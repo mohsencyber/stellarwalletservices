@@ -53,7 +53,7 @@ Assets.prototype.getAssetTruster = async function( SqlQ , callback ){
                                 callback(this.truster);
                         }else
                                 callback();
-                }
+                });
 }
 
 Assets.prototype.getAssetObj = async function(SqlQ,callback){

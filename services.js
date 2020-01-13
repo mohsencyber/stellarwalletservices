@@ -11,7 +11,7 @@ const Assets =   require('./Assets.js');
 const NationalChecker = require('./nationalcodechecker.js');
 const TransferAuthorize = require('./transferauthorize.js');
 const SmsSender = require('./smssender.js');
-const BigNumber = require('BigNumber.js');
+const BigNumber = require('bignumber.js');
 
 global.SHAHKAR_URL=conf.ShahkarUrl;
 
@@ -432,7 +432,7 @@ exports.buyAssetsTrustNeed = async function(sourceid,sequence,req,callback){
 		.setTimeout(0)
 		.build();
 		trans.sign(signtruster);
-				callback(,trans.toXDR('base64'));
+				callback(null,trans.toXDR('base64'));
 		   }//if destinationid
 			else
 			callback( 404,"destination not found");
@@ -455,7 +455,7 @@ exports.buyAssetsTrustNeed = async function(sourceid,sequence,req,callback){
 exports.buyAssetsThird = async function(req,res){
 	var sourceid = req.body.sourceid;
 	var sequencein = req.body.sequence;
-	var sequence = (new BigNumber(sequencein)).sub(1);
+	var sequence = (new BigNumber(sequencein)).sub(1).toString();
 	console.log(`Sequence ${sequencein} `);
 	await buyAssetsTrustNeed(sourceid,sequence,req, async (err,result)=>{
 		console.log(`Transaction response ${err} and ${result} `);
@@ -463,24 +463,34 @@ exports.buyAssetsThird = async function(req,res){
 			return  res.status(401).send(result);
 		return res.send(result);
 	});
-}
+};
 
 exports.TransInquiry= async function (req,res){
+	var sqlstr = "select * from buyrequest where requestid=? and destinationid=?";
+	var values = [req.body.requestid,req.body.destinationid];
+	SqlQ.query(sqlstr,values,(err,result)=>{
+		if (err)
+			return res.status(401).send("Internal server error");
+		if ( result.length && result[0].status=='success') 
+			return res.send("success");
+		else 
+			return res.status(401).send("transaction not found.");
+	})
+};
 
-}
 exports.buyAssets = async function(req,res){
 	var sourceID= publicKey;
 	var srcAcc = await server.loadAccount(sourceID);
 	var sequence=srcAcc.sequenceNumber();
 	var source = StellarSdk.Keypair.fromSecret(secretKey);
 	var id = req.body.id;
-        var sqlStr = " select * from buyrequest where requestid=? and destinationid=? and status='success' "; 
+        var sqlStr = " select * from buyrequest where requestid=? and destinationid=? "; 
 	var insSqlStr="insert into buyrequest (requestid,destinationid) values(?,?)";
 	var Values=[id,req.body.destinationid];
 	var updateStr="update buyrequest status='success' where requestid=? and destinationid=?";
 	var updateErrStr="update buyrequest status='fail' where requestid=? and destinationid=?";
-	SqlQ.query(sqlStr,Values,(err,resultid)=>{
-	if ( resultid.length || err )
+	SqlQ.query(sqlStr,Values,async (err,resultid)=>{
+	if ( resultid.length || err ){
 		return res.status(401).send("Transaction duplicate.");
 	}else{
 	    try{
@@ -494,7 +504,7 @@ exports.buyAssets = async function(req,res){
 			}else {
 				var trans = new StellarBase.Transaction(result,conf.NetworkPass); 
 				trans.sign(source);
-			        SqlQ.query(updateStr,Values,(error,results)=>{
+			        SqlQ.query(updateStr,Values,async (error,results)=>{
 				  if ( !error ){
 				   await server.submitTransaction(trans).then(subres=>{
 				   	console.log(subres.ledger);
