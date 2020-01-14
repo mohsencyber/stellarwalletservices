@@ -9,18 +9,21 @@ class TransferAuthorize{
 
       async  amountDecimalControl(amount,asset,StellarSdk,server,callback){
 	  var result = true;
-		console.log("amountDecimal Control");
+		console.log(`amountDecimal Control ${amount}`);
 		await server.accounts()
 	        .accountId(asset.getIssuer())//StellarSdk.Keypair.fromPublicKey(publicKey))
                 .call()
                 .then(async (results)=> {
 		  await StellarSdk.StellarTomlResolver.resolve(results.home_domain).then(response => {
-	         	  callback( response.CURRENCIES.find(element => {
-	            	       if ( element.code==asset.getCode() )
-	               	 	if (parseInt(amount.substr(-7+element.display_decimals))==0)
-				        return true;
+			  callback( response.CURRENCIES.find(element => {
+	            	       if ( element.code==asset.getCode() ){
+				 var crcamount = parseFloat(amount)*Math.pow(10,element.display_decimals);
+	               	 	 //if (parseInt(amount.substr(-7+element.display_decimals))==0)
+	               	 	 if (crcamount - parseInt(crcamount) == 0)
+				        return true ;
 				  else 
-					return false;
+					return false ;
+			       }
 	        	   }) )  
 	  	 });
 	     });
@@ -44,13 +47,14 @@ class TransferAuthorize{
 	}
         async isAssetPermitted(srcTrns,amount,asset,callback){
 		var permitted= true;
+	        console.log("isAssetPermitted call");
 		await this.amountDecimalControl(amount,asset,this.StellarSdk,this.server,async (amresult)=>{
 	        if ( amresult ) {
 			if ( this.conff.SourceControl ) {
-				assetcodeFilter=asset.getCode();
-				assetissuFilter=asset.getIssuer();
-				sqlstr="select * from validsource a left join assets b on a.assetid=b.id where a.accountid=? and b.assetcode = ? and b.assetissuer = ? ";
-                        	values = [srcTrns,assetcodeFilter,assetissuFilter];
+				var assetcodeFilter=asset.getCode();
+				var assetissuFilter=asset.getIssuer();
+				var sqlstr="select * from validsource a left join assets b on a.assetid=b.id where a.accountid=? and b.assetcode = ? and b.assetissuer = ? ";
+                        	var values = [srcTrns,assetcodeFilter,assetissuFilter];
 				await this.SqlQ.query(sqlstr,values,(err,result)=>{
                 	                        if (err) {console.log(err);permitted=false;}
           	                              if (!result.length )
@@ -73,7 +77,7 @@ class TransferAuthorize{
                   if ( operations.find(async element=>{
                         try{
 			  var inAsset = this.StellarSdk.Asset.fromOperation(element.body().paymentOp().asset());
-			  inamount = element.body().paymentOp().amount().low.toString();
+			  inamount = element.amount.toString();//element.body().paymentOp().amount().low.toString();
 		  if ( this.conff.SourceControl ){
                           var assetcodeqry;
                           var assetissuqry;

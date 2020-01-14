@@ -23,7 +23,7 @@ Assets.prototype.setAssetFromId = async function(SqlQ,callback){
 		//console.log("==> id is set.");
 		await SqlQ.query(sqlstr,values,(err,result)=>{
 			if ( err ) {console.log(err);}
-			if ( result ){
+			if ( result.length ){
 				this.assetCode=result[0].assetcode;
 				this.assetIssuer=result[0].assetissuer;
 				this.truster=result[0].truster;
@@ -44,26 +44,36 @@ Assets.prototype.setAssetFromId = async function(SqlQ,callback){
 }
 
 Assets.prototype.getAssetTruster = async function( SqlQ , callback ){
-	var sqlstr="select * from assets where assetcode = ? and assetissuer = ?";
-                var values=[this.assetCode,this.assetIssuer];
-                await SqlQ.query( sqlstr ,values ,(err,result)=>{
-                        if ( err) callback(false);
-                        if ( result ){
-                                this.truster=result[0].truster;
-                                callback(this.truster);
-                        }else
-                                callback();
-                });
+	await this.setAssetFromId(SqlQ, async (result,assetcode,assetissuer,truster)=>{
+
+	if ( result ) {
+		if (!truster ) {
+		    var sqlstr="select * from assets where assetcode = ? and assetissuer = ?";
+        	        var values=[this.assetCode,this.assetIssuer];
+	                await SqlQ.query( sqlstr ,values ,(err,result)=>{
+	                        if ( err) callback(null);
+	                        if ( result.length ){
+	                                this.truster=result[0].truster;
+	                                callback(this.truster);
+	                       }else
+	                               callback(null);
+	               });
+		    }else{
+			    callback(truster);
+		    }
+	}else
+		callback(null);
+	});
 }
 
 Assets.prototype.getAssetObj = async function(SqlQ,callback){
-		console.log("=>",this.assetCode,this.assetIssuer);
+		console.log("getAssetObj call");
 	await this.setAssetFromId(SqlQ,(result,assetcode,assetissuer,truster)=>{
 	if ( result ) {
 		this.assetCode=assetcode;
 		this.assetIssuer=assetissuer;
 		this.truster=truster;
-		console.log(this.assetCode,this.assetIssuer);
+		//console.log(this.assetCode,this.assetIssuer);
 		if ( this.assetCode && this.assetIssuer &&
 		      this.assetCode.length>0 && this.assetIssuer.length>0 ){
 

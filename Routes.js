@@ -57,7 +57,7 @@ module.exports = function(app) {
 
   app.post('/buyassets',(req,res)=>{
 	var  secureKey= Stellar_Sdk.Keypair.fromPublicKey(config.WalletPubKey);
-	var WalletKeyInt = req.body.destinationid+","+req.body.amount+","+req.body.assetid+","+req.body.id;
+	var WalletKeyInt = req.body.destinationid+","+req.body.amount+","+req.body.assetid+","+req.body.requestid;
 	  console.log(WalletKeyInt);
         if ( secureKey.verify(WalletKeyInt,Buffer.from(req.body.securekey ,'base64')) ){
 	  myfunc.buyAssets(req,res);
