@@ -35,13 +35,16 @@ else
 
 
   var wallet =  express();
+  var anchor =  express();
   console.log(DB_HOST);
   app.use(bodyParser.urlencoded({ extended: true }));
   app.use(bodyParser.json());
   app.use('/wallet',wallet);
+  app.use('/anchor',anchor);
 
   var routes = require('./Routes'); //importing route
   routes(wallet);
+  routes(anchor);
   routes(app);
   //router.use(function(req,res,routes){
   //	  routes(router);
