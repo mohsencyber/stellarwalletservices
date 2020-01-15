@@ -66,10 +66,17 @@ Public Key
    Secret Key
         SCEF6DC4XVDSEQVUOZZMPMMBPLE7DKTLUBSYSRZH26RZKE6FJODYRFKG
  */
+var xxx//="123";
+var xx=0;
+if ( xxx )
+	xx=parseInt(xxx);
+console.log(10+xx);
 
-
+var y = null;
+ if ( y )
+	console.log(`go ${y}`);
 var secKey = "GCYZ67ICI7A7RAZ3QMAEJZDNZSYSG57AI2EJUHQYEJ5O7TKB6RLTSYHP,1.5,1,1234567891";
-var encKey = StellarSdk.Keypair.fromSecret('SCEF6DC4XVDSEQVUOZZMPMMBPLE7DKTLUBSYSRZH26RZKE6FJODYRFKG');
+var encKey = StellarSdk.Keypair.fromSecret('SDD5T25GGNXDCOAVT4ZFCSPUZ4WMXZRKVZFJ7MTRSGOSWFHBDO4LQ6IH');//'SCEF6DC4XVDSEQVUOZZMPMMBPLE7DKTLUBSYSRZH26RZKE6FJODYRFKG');
 console.log(encKey.publicKey());
 var encData = encKey.sign(secKey).toString('base64');
 console.log(encData);

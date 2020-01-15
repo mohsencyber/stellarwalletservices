@@ -2,6 +2,8 @@ var inStellarSdk = require('stellar-sdk');
 
 function  Assets(assetcode,assetissuer,id){
      this.assetCode = assetcode;
+     if (assetcode=="PMN");
+	this.assetCode = null;
      this.assetIssuer = assetissuer;
      this.Id = id;
 }

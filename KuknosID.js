@@ -3,7 +3,8 @@ const StellarSdk = require("stellar-sdk");
 
 function KuknosID(accountstr){
 	this.accountID=accountstr;
-	if ( accountstr.indexOf("*")>0 ) {
+	if ( accountstr && 
+		accountstr.indexOf("*")>0 ) {
 		this.validID=false;
 	}else{
 		this.validID = true;

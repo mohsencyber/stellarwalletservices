@@ -75,6 +75,7 @@ class TransferAuthorize{
 		 console.log("OperationPermitted call");
                 //var operations = transaction.toEnvelope().tx().operations();
                   if ( operations.find(async element=>{
+			  
                         try{
 			  var inAsset = this.StellarSdk.Asset.fromOperation(element.body().paymentOp().asset());
 			  inamount = element.amount.toString();//element.body().paymentOp().amount().low.toString();
@@ -85,6 +86,7 @@ class TransferAuthorize{
                           var asstissuFilter;
                           var sqlstr;
                           var values;
+			  //transferNotPermited = false;
 				//console.log("-(",inamount,inAsset,")-");
                                 if ( inAsset.isNative()){
                                         if ( this.conff.NativeControl ){
@@ -108,8 +110,10 @@ class TransferAuthorize{
 						  return transferNotPermited;
 					  });
 					 }
-					}else
+					}else{
+						transferNotPermited = true;
 						return true;
+					}
                                 });
 
 	         }else{
@@ -124,9 +128,9 @@ class TransferAuthorize{
                         }
                 }) ) {//foreach->find
 			console.log("TransferNotPermited .",!transferNotPermited);
-		        callback(false);
+			  callback( !transferNotPermited )
 		  }else
-			callback(true);
+			callback( !transferNotPermited );
 	}
 }
 

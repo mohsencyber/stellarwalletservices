@@ -18,8 +18,8 @@ global.SHAHKAR_URL=conf.ShahkarUrl;
 StellarSdk.Config.setAllowHttp(conf.AllowHttp);
 
 //accID tecvest = 'GD2YOX2GL3LQQKLNBKRG3H2MXRLCL6OM24PRXATIWC2RHD4Q6EE44BUL';
-//const publicKey='GBQ7LPNULIXKQHZNFUUA7QURKZG4QHYE5LI6QPDKRWTT37BDTSW6DBVC';live
-//const secretKey='SCOEJGH5I23FLXYMD3ZVNUMUVHMBD5T3UZB36PAWSLXIB5LYDI7X3BVC';live
+//const publicKey='GBQ7LPNULIXKQHZNFUUA7QURKZG4QHYE5LI6QPDKRWTT37BDTSW6DBVC';//live
+//const secretKey='SCOEJGH5I23FLXYMD3ZVNUMUVHMBD5T3UZB36PAWSLXIB5LYDI7X3BVC';//live
 const publicKey='GDKHHHLBBCAEUD54ZBGXNFSXBR37EUHJCKGXOFTJLXXLIA75TNK533SI';//test
 const secretKey='SCOE3UNFCGYGKHWLLEG2KONSE7OYXHTWTTEGCQ6B2VYP5HH76S6PYOGI';//test
 const  server = new StellarSdk.Server(conf.HorizonUrl);//'https://hz1-test.kuknos.org');
@@ -191,6 +191,9 @@ exports.submitConfirm = async function(req,res){
 	        var sqlconfiguser= "insert into users (id,username,domain,mobilenumber,email,nationalcode,fullname,personality,corpid)values(?,?,?,?,?,?,?,?,?)";
 		var values = [ ticket,sms];
 	        var asyncres = "";
+		var additionalFee=0;
+	        if ( req.body.additionalfee )
+			additionalFee = parseInt(req.body.additionalfee);
 		await SqlQ.query(sqlstr,values,async function(err,result){
 			if (err){ 
 				console.log("ticket is err.",err);
@@ -213,7 +216,7 @@ exports.submitConfirm = async function(req,res){
 			  .then(async ({ sequence }) => {
 		   	 const account = new StellarSdk.Account(source.publicKey(), sequence)
 		    	const transaction = new StellarSdk.TransactionBuilder(account, {
-		     	 fee: conf.BaseFee,//StellarSdk.BASE_FEE,
+		     	 fee: conf.BaseFee+additionalFee,//StellarSdk.BASE_FEE,
 		     	 networkPassphrase: conf.NetworkPass//'Kuknos-NET'
 		   	 })
 		      	.addOperation(StellarSdk.Operation.createAccount({
@@ -262,6 +265,9 @@ exports.submitConfirm = async function(req,res){
 
 exports.activeToken = async function (req,res){
 	console.log(req.body.assetid);
+	var additionalFee=0;
+        if ( req.body.additionalfee )
+		additionalFee = parseInt(req.body.additionalfee);
 	var asset = new Assets(req.body.assetcode,req.body.assetissuer,req.body.assetid);
 	var memotype = StellarSdk.MemoNone;
 	if ( req.body.memotype == 'hash' ) 
@@ -277,7 +283,7 @@ exports.activeToken = async function (req,res){
     .then(function(receiver) {
       var transaction = new StellarSdk.TransactionBuilder(receiver, {
 	memo: memoObj,
-        fee: conf.BaseFee,
+        fee: conf.BaseFee+additionalFee,
         networkPassphrase: conf.NetworkPass//'Kuknos-NET'
       })
         .addOperation(StellarSdk.Operation.changeTrust({
@@ -296,6 +302,9 @@ exports.activeWallet = async function (req,res){
 	//var id= new Assets(req.body.assetcode,req.body.assetissuer);
 	//var token = new StellarSdk.Asset('ABPA', issuingKeys.publicKey());
 	//var token  = asset.getAssetObj();
+	var additionalFee=0;
+        if ( req.body.additionalfee )
+		additionalFee = parseInt(req.body.additionalfee);
 	var requested = StellarSdk.Keypair.fromPublicKey(req.body.accountid); 
 	var memotype = StellarSdk.MemoNone;
         if ( req.body.memotype == 'hash' )
@@ -308,7 +317,7 @@ exports.activeWallet = async function (req,res){
     .then(function(receiver) {
       var transaction = new StellarSdk.TransactionBuilder(receiver, {
 	memo: memoObj,
-	fee: conf.BaseFee,
+	fee: conf.BaseFee+additionalFee,
         networkPassphrase: conf.NetworkPass//'Kuknos-NET'
       })
         .addOperation(StellarSdk.Operation.setOptions({
@@ -335,6 +344,9 @@ exports.transferTo = async function(req,res){
 	var accountID = req.body.accountid;
 	var destinationID =  new KuknosID(req.body.destinationid);
 	var amount = req.body.amount;
+	var additionalFee=0;
+        if ( req.body.additionalfee )
+		additionalFee = parseInt(req.body.additionalfee);
 	var asset = new Assets(req.body.assetcode,req.body.assetissuer,req.body.assetid);
 	var assetObj; 
 	var memotype = StellarSdk.MemoNone;
@@ -359,7 +371,7 @@ exports.transferTo = async function(req,res){
 		//});
 		const transaction = new StellarSdk.TransactionBuilder(accountSrc, {
 			memo: memoObj,
-			fee:conf.BaseFee,
+			fee:conf.BaseFee+additionalFee,
 			networkPassphrase: conf.NetworkPass
 		}).addOperation(StellarSdk.Operation.payment({
       			destination: destinationid,
@@ -378,13 +390,16 @@ exports.transferTo = async function(req,res){
 
 };//end func
 
-exports.buyAssetsTrustNeed = async function(sourceid,sequence,req,callback){
+exports.buyAssetsTrustNeed = async function(sourcefeeid,sourceid,sequence,req,callback){
 
 	var accsource = new KuknosID(sourceid);
 	var accountSrc;
+	var additionalFee=0;
+        if ( req.body.additionalfee )
+		additionalFee = parseInt(req.body.additionalfee);
 	accsource.getAccountID(SqlQ, (sourceID)=>{
 	  if (sourceID){
-  	   accountSrc = new StellarBase.Account(sourceID,sequence);
+  	   accountSrc = new StellarBase.Account(sourcefeeid,sequence);
 	   var  destinationID = new KuknosID(req.body.destinationid);
            var amount = req.body.amount;
            var asset  = new Assets(req.body.assetcode,req.body.assetissuer,req.body.assetid);
@@ -410,7 +425,7 @@ exports.buyAssetsTrustNeed = async function(sourceid,sequence,req,callback){
                          if ( destinationid ){
 	   var trans = new StellarBase.TransactionBuilder(accountSrc,{
  		memo:memoObj,
-		fee:conf.BaseFee,
+		fee:conf.BaseFee+additionalFee,
 		//timebounds:{maxTime:},
 		networkPassphrase:conf.NetworkPass
 	   });
@@ -418,7 +433,8 @@ exports.buyAssetsTrustNeed = async function(sourceid,sequence,req,callback){
 		     trans.addOperation(StellarSdk.Operation.payment({
                         destination:destinationid,
                         asset:assetObj,
-                        amount:amount
+                        amount:amount,
+			source:sourceID
                 }))
 	      }else{
 	       trans.addOperation(StellarSdk.Operation.allowTrust({
@@ -430,7 +446,8 @@ exports.buyAssetsTrustNeed = async function(sourceid,sequence,req,callback){
 		.addOperation(StellarSdk.Operation.payment({
 			destination:destinationid,
 			asset:assetObj,
-			amount:amount
+			amount:amount,
+			source:sourceID
 		}))
 		.addOperation(StellarSdk.Operation.allowTrust({
 			trustor:destinationid,
@@ -464,13 +481,25 @@ exports.buyAssetsTrustNeed = async function(sourceid,sequence,req,callback){
 exports.buyAssetsThird = async function(req,res){
 	var sourceid = req.body.sourceid;
 	var sequencein = req.body.sequence;
-	var sequence = (new BigNumber(sequencein)).sub(1).toString();
-	console.log(`Sequence ${sequencein} `);
-	await buyAssetsTrustNeed(sourceid,sequence,req, async (err,result)=>{
+	var sourcefeeID = req.body.sourceidfee;
+	if ( !sourcefeeID )
+		sourcefeeID=sourceid;
+	var sourceFeeid= new KuknosID(sourcefeeID);
+	sourceFeeid.getAccountID(SqlQ, async (sourceFeeID)=>{
+         if ( sourceFeeID) {
+	   var sequence = (new BigNumber(sequencein)).sub(1).toString();
+	   console.log(`Sequence ${sequencein} `);
+           if ( sourceid == sourcefeeID )
+		 sourceid = sourceFeeID;
+	   await buyAssetsTrustNeed(sourceFeeID,sourceid,sequence,req, async (err,result)=>{
 		console.log(`Transaction response ${err} and ${result} `);
 		if ( err ) 
 			return  res.status(401).send(result);
 		return res.end(result);
+	   });
+	 }else{
+		 return res.status(401).send("accountfee not found");
+	 }
 	});
 };
 
@@ -511,7 +540,7 @@ exports.buyAssets = async function(req,res){
 		SqlQ.query(insSqlStr,Values, async (error,results)=>{
 			if (error )
 				return  res.status(401).end("Internal server Error.");
-			await this.buyAssetsTrustNeed(sourceID,sequence,req, async (err,result)=>{
+			await this.buyAssetsTrustNeed(sourceID,sourceID,sequence,req, async (err,result)=>{
 			if ( err ) {
 				console.log(result);
 				SqlQ.query(updateErrStr,Values,(errm,ress)=>{
