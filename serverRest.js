@@ -1,3 +1,4 @@
+var Ddos = require('ddos');
 var express = require('express'),
   app = express(),
   port = process.env.PORT || 3000;
@@ -34,9 +35,11 @@ else
 	global.SHAHKAR_PASS = "Ci699!";
 
 
+  var ddos = new Ddos({burst:10, limit:15})
   var wallet =  express();
   var anchor =  express();
   console.log(DB_HOST);
+  app.use(ddos.express);
   app.use(bodyParser.urlencoded({ extended: true }));
   app.use(bodyParser.json());
   app.use('/wallet',wallet);
