@@ -46,9 +46,9 @@ else
   app.use('/anchor',anchor);
 
   var routes = require('./Routes'); //importing route
-  routes(wallet);
-  routes(anchor);
-  routes(app);
+  routes(wallet,1);
+  routes(anchor,2);
+  routes(app,3);
   //router.use(function(req,res,routes){
   //	  routes(router);
   //});
