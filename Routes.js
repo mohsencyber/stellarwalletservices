@@ -9,46 +9,92 @@ module.exports = function(app,control) {
 if (control==1) {//wallet service
   
 	   app.get('/AccountInfo/:accountId', function(req, res){
+		   try{
 	        var task = myfunc.accountinfo(req.params.accountId,res);
 	        console.log(req.params.accountId);
 	        console.log("Router in get_account_info : ",task);
- 	 });
+		   }catch(err){
+			   console.log(err);
+			   res.status(500).send(err);
+		   }
+	});
 
 	app.get('/assetslist',function(req,res){
+		try{
 		var assetlist = myfunc.listOfAssets(req,res);
+		}catch(err){
+                           console.log(err);
+                           res.status(500).send(err);
+                   }
 	});//end func
 
 	  app.post('/PostTrans', (req,res)=>{
 		  //console.log(req);
+		  try {
 		  var txsubmit = myfunc.postTransaction(req.body.txdr,res);
 		  //return res.send("Post Ok");
+		  }catch(err){
+                           console.log(err);
+                           res.status(500).send(err);
+                   }
 	  });
 
 	  app.post('/submitreq',(req,res)=>{
-		  var submituser = myfunc.submitUser(req,res);
+		  try{
+		     var submituser = myfunc.submitUser(req,res);
+		   }catch(err){
+                           console.log(err);
+                           res.status(500).send(err);
+                   }
 	  	});
 
 	  app.post('/submitconfirm',(req,res)=>{
+		  try{
 		  var myres = myfunc.submitConfirm(req,res); 
+		  }catch(err){
+                           console.log(err);
+                           res.status(500).send(err);
+                   }
 	  	});
 
 	  app.post('/activetoken',(req,res)=>{
+		  try{
 		  myfunc.activeToken(req,res);
+	          }catch(err){
+                           console.log(err);
+                           res.status(500).send(err);
+                   }
 	  });
 	
 	  app.post('/activewallet',(req,res)=>{
+		  try{
 		  myfunc.activeWallet(req,res);
+	  	  }catch(err){
+                           console.log(err);
+                           res.status(500).send(err);
+                   }
 	  });
 
 	  app.post('/transfer',(req,res)=>{
+		  try{
 		  myfunc.transferTo(req,res);
+		  }catch(err){
+                           console.log(err);
+                           res.status(500).send(err);
+                   }
 	  });
 
 	  app.post('/transactioninquiry',(req,res)=>{
+		  try{
 		  myfunc.TransInquiry(req,res);
+		  }catch(err){
+                           console.log(err);
+                           res.status(500).send(err);
+                   }
 	  });
 
 	  app.post('/buyassets',(req,res)=>{
+		  try{
 		var  secureKey= Stellar_Sdk.Keypair.fromPublicKey(config.WalletPubKey);
 		var WalletKeyInt = req.body.destinationid+","+req.body.amount+","+req.body.requestid+","+req.body.assetcode;
 		  console.log(WalletKeyInt);
@@ -58,16 +104,30 @@ if (control==1) {//wallet service
 			console.log("Request Not Verified.");
 			return res.status(401).end("Not Permitted");
 		}
+		}catch(err){
+                           console.log(err);
+                           res.status(500).send(err);
+                   }
 	  });
 }else if ( control == 2 ) {
 
   		app.post('/buyassetsthirdparty',(req,res)=>{
+			try{
 			  myfunc.buyAssetsThird(req,res);
+			}catch(err){
+                           console.log(err);
+                           res.status(500).send(err);
+                      }
 		  });
 	}else {
 
 		app.get( '/federation',function(req,res){
+			try{
 			myfunc.federation(req,res);
+			}catch(err){
+                           console.log(err);
+                           res.status(500).send(err);
+                      }
 		});
 
 	}
