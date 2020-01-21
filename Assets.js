@@ -2,9 +2,10 @@ var inStellarSdk = require('stellar-sdk');
 
 function  Assets(assetcode,assetissuer,id){
      this.assetCode = assetcode;
-     if (assetcode=="PMN");
-	this.assetCode = null;
      this.assetIssuer = assetissuer;
+     if (assetcode=="PMN");
+	{this.assetCode = null;
+	 this.assetIssuer = null;}
      this.Id = id;
 }
 
@@ -18,7 +19,7 @@ Assets.prototype.setAssetIssuer = function(assetissuer){
 }*/
 
 Assets.prototype.setAssetFromId = async function(SqlQ,callback){
-		console.log("setAssetFromId call.");
+		console.log("setAssetFromId call.",this.assetCode ,this.assetIssuer);
 	if ( this.Id && !this.assetCode && !this.assetIssuer ){
 		var sqlstr="select * from assets where id = ?";
 		var values=[this.Id];
@@ -46,12 +47,13 @@ Assets.prototype.setAssetFromId = async function(SqlQ,callback){
 }
 
 Assets.prototype.getAssetTruster = async function( SqlQ , callback ){
+	console.log("getAssetTruster");
 	await this.setAssetFromId(SqlQ, async (result,assetcode,assetissuer,truster)=>{
-
+		console.log(`getAssetsfromid:${result}-${truster}-${assetcode}:${assetissuer}`);
 	if ( result ) {
 		if( !assetcode && !assetissuer )
 			callback("PMN");
-		if (!truster ) {
+		else if (!truster ) {
 		    var sqlstr="select * from assets where assetcode = ? and assetissuer = ?";
         	        var values=[this.assetCode,this.assetIssuer];
 	                await SqlQ.query( sqlstr ,values ,(err,result)=>{
