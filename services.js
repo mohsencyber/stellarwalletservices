@@ -269,11 +269,11 @@ exports.activeToken = async function (req,res){
         if ( req.body.additionalfee )
 		additionalFee = parseInt(req.body.additionalfee);
 	var asset = new Assets(req.body.assetcode,req.body.assetissuer,req.body.assetid);
-	var memotype = StellarSdk.MemoNone;
+	var memotype = StellarSdk.MemoText;
 	if ( req.body.memotype == 'hash' ) 
 		memotype = StellarSdk.MemoHash;
-	   else if ( req.body.memotype == 'text' )
-		memotype = StellarSdk.MemoText;
+	   if ( !req.body.memo )
+		memotype = StellarSdk.MemoNone;
 	var memoObj = new StellarSdk.Memo(memotype,req.body.memo);
 	//var token = new StellarSdk.Asset('ABPA', issuingKeys.publicKey());
 	var token  = asset.getAssetObj(SqlQ,async (token)=>{
@@ -306,11 +306,11 @@ exports.activeWallet = async function (req,res){
         if ( req.body.additionalfee )
 		additionalFee = parseInt(req.body.additionalfee);
 	var requested = StellarSdk.Keypair.fromPublicKey(req.body.accountid); 
-	var memotype = StellarSdk.MemoNone;
+	var memotype = StellarSdk.MemoText;
         if ( req.body.memotype == 'hash' )
                 memotype = StellarSdk.MemoHash;
-           else if ( req.body.memotype == 'text' )
-                memotype = StellarSdk.MemoText;
+           if ( !req.body.memo )
+                memotype = StellarSdk.MemoNone;
         var memoObj = new StellarSdk.Memo(memotype,req.body.memo);
 
   await server.loadAccount(requested.publicKey())
@@ -349,11 +349,11 @@ exports.transferTo = async function(req,res){
 		additionalFee = parseInt(req.body.additionalfee);
 	var asset = new Assets(req.body.assetcode,req.body.assetissuer,req.body.assetid);
 	var assetObj; 
-	var memotype = StellarSdk.MemoNone;
+	var memotype = StellarSdk.MemoText;
         if ( req.body.memotype == 'hash' )
                 memotype = StellarSdk.MemoHash;
-           else if ( req.body.memotype == 'text' )
-                memotype = StellarSdk.MemoText;
+           if ( !req.body.memo )
+                memotype = StellarSdk.MemoNone;
         var memoObj = new StellarSdk.Memo(memotype,req.body.memo);
 	
 	assetObj = await asset.getAssetObj(SqlQ,async function(assetObj){ //});//.then(async assetObj =>{ //assetObj=result 
@@ -406,38 +406,40 @@ exports.buyAssetsTrustNeed = async function(sourcefeeid,sourceid,sequence,req,ca
            console.log("buy asset for :"+req.body.destinationid);
            //var sourceKeyIssuer = StellarSdk.Keypair.fromSecret(secretKey);
            var transferAuth = new TransferAuthorize(SqlQ,StellarSdk,conf,server);
-           var memotype = StellarSdk.MemoNone;
+           var memotype = StellarSdk.MemoText;
            if ( req.body.memotype == 'hash' )
                  memotype = StellarSdk.MemoHash;
-           else if ( req.body.memotype == 'text' )
-                 memotype = StellarSdk.MemoText;
+           if ( !req.body.memo )
+                 memotype = StellarSdk.MemoNone;
            var memoObj = new StellarSdk.Memo(memotype,req.body.memo);
            //var destination= StellarSdk.Keypair.fromPublicKey(rows.accountid);
            //find id in table
 	   var truster = asset.getAssetTruster(SqlQ,(truster)=>{
 	   if ( truster ){
-		   console.log(truster);
-	   var signtruster= StellarSdk.Keypair.fromSecret(truster);
-           var assetObj= asset.getAssetObj(SqlQ, async (assetObj)=>{
-           await transferAuth.isAssetPermitted(sourceID,amount,assetObj,async function(results){
+	       console.log(truster);
+               var signtruster = null;
+               var assetObj= asset.getAssetObj(SqlQ, async (assetObj)=>{
+               if ( !assetObj.isNative() )
+	          signtruster= StellarSdk.Keypair.fromSecret(truster);
+               await transferAuth.isAssetPermitted(sourceID,amount,assetObj,async function(results){
                  if (results){
                  await destinationID.getAccountID(SqlQ, async function(destinationid){
-                         if ( destinationid ){
-	   var trans = new StellarBase.TransactionBuilder(accountSrc,{
- 		memo:memoObj,
-		fee:conf.BaseFee+additionalFee,
-		//timebounds:{maxTime:},
-		networkPassphrase:conf.NetworkPass
-	   });
-	     if( assetObj.isNative() ){
-		     trans.addOperation(StellarSdk.Operation.payment({
-                        destination:destinationid,
-                        asset:assetObj,
-                        amount:amount,
-			source:sourceID
-                }))
-	      }else{
-	       trans.addOperation(StellarSdk.Operation.allowTrust({
+                   if ( destinationid ){
+	              var trans = new StellarBase.TransactionBuilder(accountSrc,{
+ 		        memo:memoObj,
+		        fee:conf.BaseFee+additionalFee,
+		        //timebounds:{maxTime:},
+		        networkPassphrase:conf.NetworkPass
+	              });
+	             if( assetObj.isNative() ){
+		       trans.addOperation(StellarSdk.Operation.payment({
+                          destination:destinationid,
+                          asset:assetObj,
+                          amount:amount,
+			  source:sourceID
+                     }))
+	           }else{
+	             trans.addOperation(StellarSdk.Operation.allowTrust({
 			trustor:destinationid,
 			assetCode:assetObj.getCode(),
 			authorize:true,
@@ -455,10 +457,11 @@ exports.buyAssetsTrustNeed = async function(sourcefeeid,sourceid,sequence,req,ca
                         authorize:false,
                         source:assetObj.getIssuer()
 		}))
-	     }
+	     }//operation added
 		var inTrans = trans.setTimeout(parseInt(conf.TimeOut)).build();
-		inTrans.sign(signtruster);
-				callback(null,inTrans.toXDR('base64'));
+		     if ( signtruster )	   
+		          inTrans.sign(signtruster);
+		     callback(null,inTrans.toXDR('base64'));
 		   }//if destinationid
 			else
 			callback( 404,"destination not found");
@@ -479,11 +482,11 @@ exports.buyAssetsTrustNeed = async function(sourcefeeid,sourceid,sequence,req,ca
 
 };
 exports.buyAssetsThird = async function(req,res){
-	var sourceid = req.body.sourceid;
-	var sequencein = req.body.sequence;
-	var sourcefeeID = req.body.sourceidfee;
-	if ( !sourcefeeID )
-		sourcefeeID=sourceid;
+	var sourceid = req.body.tokensourceid;
+	var sequencein = req.body.txsourcesequence;
+	var sourcefeeID = req.body.txsourceid;
+	if ( !sourceid )
+		sourceid=sourcefeeID;
 	var sourceFeeid= new KuknosID(sourcefeeID);
 	sourceFeeid.getAccountID(SqlQ, async (sourceFeeID)=>{
          if ( sourceFeeID) {
@@ -498,7 +501,7 @@ exports.buyAssetsThird = async function(req,res){
 		return res.end(result);
 	   });
 	 }else{
-		 return res.status(401).send("accountfee not found");
+		 return res.status(401).send("source not found");
 	 }
 	});
 };

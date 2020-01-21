@@ -49,6 +49,8 @@ Assets.prototype.getAssetTruster = async function( SqlQ , callback ){
 	await this.setAssetFromId(SqlQ, async (result,assetcode,assetissuer,truster)=>{
 
 	if ( result ) {
+		if( !assetcode && !assetissuer )
+			callback("PMN");
 		if (!truster ) {
 		    var sqlstr="select * from assets where assetcode = ? and assetissuer = ?";
         	        var values=[this.assetCode,this.assetIssuer];
@@ -69,13 +71,13 @@ Assets.prototype.getAssetTruster = async function( SqlQ , callback ){
 }
 
 Assets.prototype.getAssetObj = async function(SqlQ,callback){
-		console.log("getAssetObj call");
+		console.log("getAssetObj call",this.assetCode,this.assetIssuer);
 	await this.setAssetFromId(SqlQ,(result,assetcode,assetissuer,truster)=>{
 	if ( result ) {
 		this.assetCode=assetcode;
 		this.assetIssuer=assetissuer;
 		this.truster=truster;
-		//console.log(this.assetCode,this.assetIssuer);
+		console.log(` Asset is ${this.assetCode},${this.assetIssuer}`);
 		if ( this.assetCode && this.assetIssuer &&
 		      this.assetCode.length>0 && this.assetIssuer.length>0 ){
 

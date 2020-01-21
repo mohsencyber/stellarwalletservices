@@ -48,6 +48,7 @@ class TransferAuthorize{
         async isAssetPermitted(srcTrns,amount,asset,callback){
 		var permitted= true;
 	        console.log("isAssetPermitted call");
+		if ( !asset.isNative() ){
 		await this.amountDecimalControl(amount,asset,this.StellarSdk,this.server,async (amresult)=>{
 	        if ( amresult ) {
 			if ( this.conff.SourceControl ) {
@@ -66,7 +67,21 @@ class TransferAuthorize{
 		}else{
 			callback(false);
 		}
-	});
+	  });
+	}else {
+		if ( this.conff.NativeControl ){
+			var sqlstr = "select * from validsource a where a.accountid=? and a.assetid is null";
+                        var values = [srcTrns];
+			await this.SqlQ.query( sqlStr,values,(err,result)=>{
+				if ( err ) { console.log(err);permitted=false;}
+				if ( !result.length )
+					permitted = false;
+				callback(permitted);
+			});
+		}else{
+			callback(permitted);
+		}
+	}
 }
 
 	async isOperationPermitted(srcTrns,operations, callback){
