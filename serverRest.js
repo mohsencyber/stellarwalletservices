@@ -45,10 +45,12 @@ else
   app.use('/wallet',wallet);
   app.use('/anchor',anchor);
 
-  var routes = require('./Routes'); //importing route
-  routes(wallet,1);
-  routes(anchor,2);
-  routes(app,3);
+  var routesApp    = require('./RoutesApp'); //importing route
+  var routesWallet = require('./RoutesWallet'); //importing route
+  var routesAnchor = require('./RoutesAnchor'); //importing route
+  routesWallet(wallet);
+  routesAnchor(anchor);
+  routesApp(app);
   //router.use(function(req,res,routes){
   //	  routes(router);
   //});
