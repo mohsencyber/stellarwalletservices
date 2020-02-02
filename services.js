@@ -198,7 +198,7 @@ exports.submitConfirm = async function(req,res){
 			if (err){ 
 				console.log("ticket is err.",err);
 				//SqlQ.end();
-				return  res.status(400),send("error");
+				return  res.status(400).send("error");
 			       }
 			if (result.length ) {
 			   var rows = result[0];
