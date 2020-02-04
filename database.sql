@@ -31,10 +31,10 @@ CREATE TABLE `users` (
   `email` varchar(255) DEFAULT NULL,
   `nationalcode` varchar(255) CHARACTER SET utf8 NOT NULL,
   `fullname` varchar(255) CHARACTER SET utf8 DEFAULT NULL,
-  `personality` int(2) NOT NULL,
-  `corpid` varchar(20) CHARACTER SET utf8 NOT NULL,
+  `personality` int(2) DEFAULT NULL,
+  `corpid` varchar(20) CHARACTER SET utf8 DEFAULT NULL,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `personality` (`personality`,`nationalcode`,`corpid`)
+  UNIQUE KEY `personality` (`personality`,`nationalcode`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 DROP TABLE IF EXISTS `validsource`;

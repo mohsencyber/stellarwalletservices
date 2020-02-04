@@ -137,8 +137,8 @@ exports.submitUser = function(req,res){
 			console.log(res.data);
 		});
 	        var corpid = '';
-		if ( req.body.corpid )
-			corpid=req.body.corpid;
+		if ( req.body.corpid ) 
+			corpid = req.body.corpid;
 		var sqlstrins = "insert into sessions (accountid,ticket , sms ,timereq,mobilenumber,nationalcode,fullname,personality,corpid) values (?,?,md5(?),now(),?,?,?,?,?)";
 		var sqlstrupd = "update sessions set accountid=?, ticket=? , sms=md5(?) , timereq=now() , mobilenumber=? , fullname=?, personality=? , corpid=? where nationalcode=?";
 		var sqlstrexi = "select * from sessions where nationalcode=? ";
@@ -233,17 +233,27 @@ exports.submitConfirm = async function(req,res){
 		          .setTimeout(0)
 		      	.build();
     			transaction.sign(source);
-			await server.submitTransaction(transaction).then(async function(subresult){
-				          var valueins=[rows.accountid,rows.personality?rows.nationalcode:rows.corpid,conf.HomeDomain,rows.mobilenumber,"",rows.nationalcode,rows.fullname,rows.personality,rows.corpid];
-				          
-				         await  SqlQ.query(sqlconfiguser,valueins,function(err,resultt){
-						  console.log(err);
-					  });
+	                var sqlcorp = "select * from users where corpid=?  and personality = 0 ";
+		        var sqlcorpval= [ rows.corpid ];
+		        var valueins=[rows.accountid,rows.personality?rows.nationalcode:rows.corpid,conf.HomeDomain,rows.mobilenumber,"",rows.nationalcode,rows.fullname,rows.personality,rows.corpid];
+	                await SqlQC.query( sqlcorp, sqlcorpval,async function(err,resultsql){
+			 if ( resultsql.length ){
+				 return  res.status(406).send("corpid duplicate");
+			 }else{
+	                  SqlQ.getConnection(async function(err,SqlQC){
+		             await SqlQC.query(sqlconfiguser,valueins,async function(err,resultt){
+			        await server.submitTransaction(transaction).then(async function(subresult){
+				          await SqlQC.commit(function(err){});
 					  return res.send(rows.accountid);
-				  }).catch(function(error){
+				  }).catch(async function(error){
 					  console.log("submitError==>"+error);
+					  await SqlQC.rollback(function(err){});
 					  return res.status(406).send(error.response.data.extras.result_codes);
 				  });
+			        });//
+			      });//getconnection
+			    };//corp result
+			  });//sqlcorp
           		});
 		  }else
 			  {
