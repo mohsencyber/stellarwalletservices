@@ -136,8 +136,8 @@ exports.submitUser = function(req,res){
                 smsSender.sendSms(sms,req.body.mobilenumber,function(res){
 			console.log(res.data);
 		});
-		var sqlstrins = "insert into sessions (accountid,ticket , sms ,timereq,mobilenumber,nationalcode,fullname,personality,corpid) values (?,?,?,now(),?,?,?,?,?)";
-		var sqlstrupd = "update sessions set accountid=?, ticket=? , sms=? , timereq=now() , mobilenumber=? , fullname=?, personality=? , corpid=? where nationalcode=?";
+		var sqlstrins = "insert into sessions (accountid,ticket , sms ,timereq,mobilenumber,nationalcode,fullname,personality,corpid) values (?,?,md5(?),now(),?,?,?,?,?)";
+		var sqlstrupd = "update sessions set accountid=?, ticket=? , sms=md5(?) , timereq=now() , mobilenumber=? , fullname=?, personality=? , corpid=? where nationalcode=?";
 		var sqlstrexi = "select * from sessions where nationalcode=? ";
 		var valuesins = [ req.body.accountid,ticket,sms,req.body.mobilenumber,req.body.nationalcode,req.body.fullname,nationalChecker.personality,req.body.corpid ];
 		var valuesupd = [ req.body.accountid,ticket,sms,req.body.mobilenumber,req.body.fullname,nationalChecker.personality,req.body.corpid,req.body.nationalcode ];
@@ -187,7 +187,7 @@ exports.submitUser = function(req,res){
 exports.submitConfirm = async function(req,res){
 		var ticket=req.body.ticket;
 		var sms = req.body.sms;
-		var sqlstr= "select * from sessions a where now() < timereq+"+conf.TimeOut+" and ticket=? and sms=? ";
+		var sqlstr= "select * from sessions a where now() < timereq+"+conf.TimeOut+" and ticket=? and sms=md5(?) ";
 	        var sqlconfiguser= "insert into users (id,username,domain,mobilenumber,email,nationalcode,fullname,personality,corpid)values(?,?,?,?,?,?,?,?,?)";
 		var values = [ ticket,sms];
 	        var asyncres = "";
