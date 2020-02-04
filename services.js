@@ -136,11 +136,14 @@ exports.submitUser = function(req,res){
                 smsSender.sendSms(sms,req.body.mobilenumber,function(res){
 			console.log(res.data);
 		});
+	        var corpid = '';
+		if ( req.body.corpid )
+			corpid=req.body.corpid;
 		var sqlstrins = "insert into sessions (accountid,ticket , sms ,timereq,mobilenumber,nationalcode,fullname,personality,corpid) values (?,?,md5(?),now(),?,?,?,?,?)";
 		var sqlstrupd = "update sessions set accountid=?, ticket=? , sms=md5(?) , timereq=now() , mobilenumber=? , fullname=?, personality=? , corpid=? where nationalcode=?";
 		var sqlstrexi = "select * from sessions where nationalcode=? ";
-		var valuesins = [ req.body.accountid,ticket,sms,req.body.mobilenumber,req.body.nationalcode,req.body.fullname,nationalChecker.personality,req.body.corpid ];
-		var valuesupd = [ req.body.accountid,ticket,sms,req.body.mobilenumber,req.body.fullname,nationalChecker.personality,req.body.corpid,req.body.nationalcode ];
+		var valuesins = [ req.body.accountid,ticket,sms,req.body.mobilenumber,req.body.nationalcode,req.body.fullname,nationalChecker.personality,corpid ];
+		var valuesupd = [ req.body.accountid,ticket,sms,req.body.mobilenumber,req.body.fullname,nationalChecker.personality,corpid,req.body.nationalcode ];
 		var valuesexi = [ req.body.nationalcode ];
 	        SqlQ.getConnection(function(err,SqlQC){
 		SqlQC.query(sqlstrexi,valuesexi,function(err,result){
