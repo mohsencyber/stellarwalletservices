@@ -236,7 +236,7 @@ exports.submitConfirm = async function(req,res){
 	                var sqlcorp = "select * from users where corpid=?  and personality = 0 ";
 		        var sqlcorpval= [ rows.corpid ];
 		        var valueins=[rows.accountid,rows.personality?rows.nationalcode:rows.corpid,conf.HomeDomain,rows.mobilenumber,"",rows.nationalcode,rows.fullname,rows.personality,rows.corpid];
-	                await SqlQC.query( sqlcorp, sqlcorpval,async function(err,resultsql){
+	                await SqlQ.query( sqlcorp, sqlcorpval,async function(err,resultsql){
 			 if ( resultsql.length ){
 				 return  res.status(406).send("corpid duplicate");
 			 }else{
