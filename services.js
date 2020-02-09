@@ -104,6 +104,7 @@ exports.postTransaction = function(req,res){
 	var operations = transaction.operations;//transaction.toEnvelope().tx().operations();
 	var transferAuth = new TransferAuthorize(SqlQ,StellarSdk,conf,server);
 	transferAuth.isOperationPermitted(srcTrns,operations, (result)=>{
+		console.log(`[PostTrans]isOperationPermitted result is ${result}:`);
 		if ( result ){
 			console.log("isPermitted")
         		server.submitTransaction(transaction).then (results => {
@@ -133,6 +134,7 @@ exports.submitUser = function(req,res){
 		var ticket = uuid.v4();
 		var sms = Math.floor(Math.random() * (9988 - 1111)) + 1111;//234';
 	        var smsSender=new SmsSender(conf.SmsUser,conf.SmsPass,conf.SmsPatternId,conf.SmsNumber,conf.SmsUrl);
+		console.log(`sms ${sms} is needed`);
                 smsSender.sendSms(sms,req.body.mobilenumber,function(res){
 			console.log(res.data);
 		});
@@ -567,6 +569,7 @@ exports.buyAssets = async function(req,res){
 				var trans = new StellarBase.Transaction(result,conf.NetworkPass); 
 				trans.sign(source);
 
+				//console.log(trans.toXDR('base64'));
 				await server.submitTransaction(trans).then(subres=>{
 			                SqlQ.query(updateStr,Values,async (error,results)=>{
 						if (error ){

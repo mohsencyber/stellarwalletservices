@@ -33,6 +33,7 @@ CREATE TABLE `users` (
   `fullname` varchar(255) CHARACTER SET utf8 DEFAULT NULL,
   `personality` int(2) DEFAULT NULL,
   `corpid` varchar(20) CHARACTER SET utf8 DEFAULT NULL,
+  `createtime` timestamp not null default current_timestamp on update current_timestamp,
   PRIMARY KEY (`id`),
   UNIQUE KEY `personality` (`personality`,`nationalcode`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;

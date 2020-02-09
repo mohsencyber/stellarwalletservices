@@ -8,23 +8,23 @@ class TransferAuthorize{
 	}
 
       async  amountDecimalControl(amount,asset,StellarSdk,server,callback){
-	  var result = true;
+	  var result = false;
 		console.log(`amountDecimal Control ${amount}`);
 		await server.accounts()
 	        .accountId(asset.getIssuer())//StellarSdk.Keypair.fromPublicKey(publicKey))
                 .call()
                 .then(async (results)=> {
-		  await StellarSdk.StellarTomlResolver.resolve(results.home_domain).then(response => {
-			  callback( response.CURRENCIES.find(element => {
+		  await StellarSdk.StellarTomlResolver.resolve(results.home_domain).then( async response => {
+			  callback(await  response.CURRENCIES.find(element => {
 	            	       if ( element.code==asset.getCode() ){
 				 var crcamount = parseFloat(amount)*Math.pow(10,element.display_decimals);
 	               	 	 //if (parseInt(amount.substr(-7+element.display_decimals))==0)
-	               	 	 if (crcamount - parseInt(crcamount) == 0)
-				        return true ;
-				  else 
+	               	 	 if (crcamount - parseInt(crcamount) == 0){
+				        return true;
+				 }else 
 					return false ;
 			       }
-	        	   }) )  
+	        	   }) );
 	  	 });
 	     });
 	}
@@ -88,64 +88,71 @@ class TransferAuthorize{
 		 var inamount;
                   var transferNotPermited=false;
 		 console.log("OperationPermitted call");
-                //var operations = transaction.toEnvelope().tx().operations();
-                  if ( operations.find(async element=>{
-			  
+		 console.log(operations);
+
+		 var element = operations.pop();
+		 while( element ){
+			 console.log(element);  
                         try{
-			  var inAsset = this.StellarSdk.Asset.fromOperation(element.body().paymentOp().asset());
 			  inamount = element.amount.toString();//element.body().paymentOp().amount().low.toString();
+				console.log(inamount);
+			  var inAsset = new this.StellarSdk.Asset(element.asset.code,element.asset.issuer);//.fromOperation(element);
 		  if ( this.conff.SourceControl ){
-                          var assetcodeqry;
-                          var assetissuqry;
                           var asstcodeFilter;
                           var asstissuFilter;
                           var sqlstr;
                           var values;
-			  //transferNotPermited = false;
-				//console.log("-(",inamount,inAsset,")-");
                                 if ( inAsset.isNative()){
                                         if ( this.conff.NativeControl ){
                                                 sqlstr = "select * from validsource a where a.accountid=? and a.assetid is null";
                                                 values = [srcTrns];
-                                        }else
-                                                return false;
+                                        }else{ element = operations.pop(); break;}
+                                                
                                 }else{
                                         asstcodeFilter=inAsset.getCode();
                                         asstissuFilter=inAsset.getIssuer();
                                         sqlstr = "select * from validsource a left join assets b on a.assetid=b.id where a.accountid=? and b.assetcode = ? and b.assetissuer = ? ";
                                         values = [srcTrns,asstcodeFilter,asstissuFilter];
                                 }
-                                await this.SqlQ.query(sqlstr,values,async (err,result)=>{
-                                        if (err) return false;//console.log(err);
-                                        if (result.length ){
+			        //console.log(sqlstr);
+                                  const result = await this.SqlQ.query(sqlstr,values );//.then(async (err,result)=>{
+			               if (result){
 					if ( !inAsset.isNative() ){
-					  await this.amountDecimalControl(inamount,inAsset,this.StellarSdk,this.server,(inresult)=>{
-						 transferNotPermited = !inresult;
-						  //console.log("decimal amount is ",inresult);
-						  return transferNotPermited;
+					  await this.amountDecimalControl(inamount,inAsset,this.StellarSdk,this.server, async (inresult)=>{
+						  console.log("2decimal amount is ",inresult);
+						  if ( inresult )
+						        transferNotPermited = false;
+						  else
+						        {callback(false);transferNotPermited = true;}
+						  element = operations.pop();
 					  });
 					 }
 					}else{
 						transferNotPermited = true;
-						return true;
+						console.log('-->',transferNotPermited);
+						callback(false);//return false;
 					}
-                                });
 
 	         }else{
 			 if ( !inAsset.isNative() ){
                                  await this.amountDecimalControl(inamount,inAsset,this.StellarSdk,this.server,(inresult)=>{
-                                            transferNotPermited = !inresult;
-					    return transferNotPermited;
+					 if( inresult )
+					       transferNotPermited = false;
+					 else
+					     {callback(false);transferNotPermited = true;}
+					    
+					    element = operations.pop();
                                       });
                                }
 		 }
                         }catch(e){
+				console.log('----->>>',e);
+		 		element = operations.pop();
                         }
-                }) ) {//foreach->find
-			console.log("TransferNotPermited .",!transferNotPermited);
-			  callback( !transferNotPermited )
-		  }else
-			callback( !transferNotPermited );
+	        };
+		if ( !transferNotPermited )
+			callback(true);
+		return true;
 	}
 }
 
