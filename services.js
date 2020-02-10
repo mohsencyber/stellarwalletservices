@@ -85,7 +85,7 @@ exports.accountinfo = async function(req,res){
 
 		}).catch(err => {
 			console.log("====>",err);
-			return res.status(404).end("Account not found");
+			return res.status(404).end("{message:'account_not_found'}");
 			//return res.json(accInfoJson);
 		});
 	});
@@ -116,7 +116,7 @@ exports.postTransaction = function(req,res){
 			} );
 		}
 		else 
-			return res.status(401).send("transfer not permitted.");
+			return res.status(401).send("{message:'transfer_not_permitted'}");
 	}).catch( err=>{
 		console.log(err);
 	});
@@ -182,7 +182,7 @@ exports.submitUser = function(req,res){
 	});
 	}else{
 		console.log("request is not verified.");
-		return res.status(400).end("request is not verified");
+		return res.status(400).end("{message:'request_not_verified'}");
 	}
      }).catch(e=>{
 	     console.log('[Error]'+e.message);
@@ -241,7 +241,7 @@ exports.submitConfirm = async function(req,res){
 		        var valueins=[rows.accountid,rows.personality?rows.nationalcode:rows.corpid,conf.HomeDomain,rows.mobilenumber,"",rows.nationalcode,rows.fullname,rows.personality,rows.corpid];
 	                await SqlQ.query( sqlcorp, sqlcorpval,async function(err,resultsql){
 			 if ( resultsql.length ){
-				 return  res.status(406).send("corpid duplicate");
+				 return  res.status(406).send("{message:'corpid_duplicate'}");
 			 }else{
 	                  SqlQ.getConnection(async function(err,SqlQC){
 		             await SqlQC.query(sqlconfiguser,valueins,async function(err,resultt){
@@ -261,7 +261,7 @@ exports.submitConfirm = async function(req,res){
 		  }else
 			  {
 				  console.log("[error-create-account]transfer from this sources is not permitted.");
-				  return res.status(401).send("transfer is not permitted");
+				  return res.status(401).send("{message:'transfer_not_permitted'}");
 			  }
 		  });//
 			}catch(errors){
@@ -273,7 +273,7 @@ exports.submitConfirm = async function(req,res){
 				console.log("ticket is invalid.");
 				//SqlQ.end();
 				//console.log("ticket is invalid2.");
-				return res.status(404).send("{message:'ticket invalid'}");
+				return res.status(404).send("{message:'ticket_invalid'}");
 			}
 		});
 	//});
@@ -378,7 +378,7 @@ exports.transferTo = async function(req,res){
 	await destinationID.getAccountID(SqlQ, async function(destinationid){
 		console.log("==>"+destinationid+"<==");
 		if ( !destinationid )
-			return res.status(404).end("destination Accound not found");
+			return res.status(404).end("{message:'dest_not_found'}");
 		console.log(assetObj,accountID);
 		const accountSrc = await server.loadAccount(accountID).then(accountSrc =>{
 		//.catch(errors=>{
@@ -398,7 +398,7 @@ exports.transferTo = async function(req,res){
 		return res.end(transaction.toXDR('base64'));
 		}).catch(errors=>{
                         console.log("account error: ", errors);
-                        return res.status(404).end("Account not found");
+                        return res.status(404).end("{message:'src_not_found'}");
                 });
 
 	});
@@ -480,20 +480,20 @@ exports.buyAssetsTrustNeed = async function(sourcefeeid,sourceid,sequence,req,ca
 		     callback(null,inTrans.toXDR('base64'));
 		   }//if destinationid
 			else
-			callback( 404,"destination not found");
+			callback( 404,"{message:'dest_not_ found'}");
 		  })//getAccountid
 	        }//if permitted
 		 else 
-		  callback(401,"Asset transfer not permitted");
+		  callback(401,"{message:'transfer_asset_not_ permitted'}");
 	       })//assetPermitted
 	      })//getAssetObj
 	     }//if truster
 		else
-			callback(400,"truster not define!!!");
+			callback(400,"{message:'truster_not_define'}");
 	    })//getTruster
 	  }//if sourceID
 		else 
-			callback(400,"sourceid not found!!!");
+			callback(400,"{message:'src_not_found'}");
 	})//getsourceID
 
 };
@@ -517,7 +517,7 @@ exports.buyAssetsThird = async function(req,res){
 		return res.end(result);
 	   });
 	 }else{
-		 return res.status(401).send("source not found");
+		 return res.status(401).send("{message:'src_not_found'}");
 	 }
 	});
 };
@@ -553,7 +553,7 @@ exports.buyAssets = async function(req,res){
 	var updateErrStr="update buyrequest set status='fail' where requestid=? and destinationid=?";
 	SqlQ.query(sqlStr,Values,async (err,resultid)=>{
 	if ( resultid.length || err ){
-		return res.status(401).send("Transaction duplicate.");
+		return res.status(401).send("{message:'transaction_duplicate'}");
 	}else{
 	    try{
 		SqlQ.query(insSqlStr,Values, async (error,results)=>{
