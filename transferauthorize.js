@@ -84,7 +84,7 @@ class TransferAuthorize{
 	}
 }
 
-	async isOperationPermitted(srcTrns,operations, callback){
+async isOperationPermitted(srcTrns,operations, callback){
 		 var inamount;
                   var transferNotPermited=false;
 		 console.log("OperationPermitted call");
@@ -106,7 +106,7 @@ class TransferAuthorize{
                                         if ( this.conff.NativeControl ){
                                                 sqlstr = "select * from validsource a where a.accountid=? and a.assetid is null";
                                                 values = [srcTrns];
-                                        }else{ element = operations.pop(); break;}
+                                        }else{ element = operations.pop(); continue;}
                                                 
                                 }else{
                                         asstcodeFilter=inAsset.getCode();
@@ -114,9 +114,9 @@ class TransferAuthorize{
                                         sqlstr = "select * from validsource a left join assets b on a.assetid=b.id where a.accountid=? and b.assetcode = ? and b.assetissuer = ? ";
                                         values = [srcTrns,asstcodeFilter,asstissuFilter];
                                 }
-			        //console.log(sqlstr);
-                                  const result = await this.SqlQ.query(sqlstr,values );//.then(async (err,result)=>{
-			               if (result){
+                                   const [resultq,fields] = await  this.SqlQ.execute(sqlstr,values );//,async (err,resultq)=>{
+			               //console.log(`resultQuery-> ${err.length}`);
+			               if (resultq.length){
 					if ( !inAsset.isNative() ){
 					  await this.amountDecimalControl(inamount,inAsset,this.StellarSdk,this.server, async (inresult)=>{
 						  console.log("2decimal amount is ",inresult);
@@ -149,6 +149,8 @@ class TransferAuthorize{
 				console.log('----->>>',e);
 		 		element = operations.pop();
                         }
+			 if ( transferNotPermited )
+				 break;
 	        };
 		if ( !transferNotPermited )
 			callback(true);

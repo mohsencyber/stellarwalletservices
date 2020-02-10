@@ -2,6 +2,7 @@ const StellarSdk =  require('stellar-sdk');
 const StellarBase = require('stellar-base');
 const uuid =     require('uuid');
 const SqlQ =     require('./db.js');
+const SqlQSync =     require('./dbsync.js');
 const conf =     require('./config.js');
 const https =    require('https');
 const myXdr =    require('js-xdr');
@@ -102,7 +103,7 @@ exports.postTransaction = function(req,res){
         //var output = transaction.toXDR();
 	//var trns = myXdr.Envelope.fromXDR(req);
 	var operations = transaction.operations;//transaction.toEnvelope().tx().operations();
-	var transferAuth = new TransferAuthorize(SqlQ,StellarSdk,conf,server);
+	var transferAuth = new TransferAuthorize(SqlQSync,StellarSdk,conf,server);
 	transferAuth.isOperationPermitted(srcTrns,operations, (result)=>{
 		console.log(`[PostTrans]isOperationPermitted result is ${result}:`);
 		if ( result ){
