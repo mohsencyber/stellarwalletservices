@@ -143,7 +143,8 @@ async isOperationPermitted(srcTrns,operations, callback){
 					    
 					    element = operations.pop();
                                       });
-                               }
+                               }else
+				 element = operations.pop();
 		 }
                         }catch(e){
 				console.log('----->>>',e);

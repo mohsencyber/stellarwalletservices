@@ -129,7 +129,11 @@ exports.submitUser = function(req,res){
 	//DbCon.connect(function(err){
 	//	if (err) return res.send(err);
 		console.log('db Connected.');
+	        var sqlCheck="select * from users where nationalcode=? and personality=? ";
 	        var nationalChecker = new NationalChecker(req.body.personality,req.body.nationalcode,req.body.corpid,req.body.mobilenumber);
+	        var valCheck=[req.body.nationalcode,nationalChecker.personality];
+	        SqlQ.query(sqlCheck,valCheck,(err,resultin)=>{
+		  if ( !resultin.length ) {
 	nationalChecker.isVerified( resv=>{
 		if ( resv ) {
 		var ticket = uuid.v4();
@@ -137,7 +141,7 @@ exports.submitUser = function(req,res){
 	        var smsSender=new SmsSender(conf.SmsUser,conf.SmsPass,conf.SmsPatternId,conf.SmsNumber,conf.SmsUrl);
 		console.log(`sms ${sms} is needed`);
                 smsSender.sendSms(sms,req.body.mobilenumber,function(res){
-			console.log(res.data);
+			console.log(res);
 		});
 	        var corpid = '';
 		if ( req.body.corpid ) 
@@ -151,30 +155,34 @@ exports.submitUser = function(req,res){
 	        SqlQ.getConnection(function(err,SqlQC){
 		SqlQC.query(sqlstrexi,valuesexi,function(err,result){
 			console.log("sqlstr exists.");
-			if (err) return  res.send(err);
+			if (err) { SqlQC.release(); return  res.send(err);}
 			if ( result.length ) {
 			   	SqlQC.query(sqlstrupd,valuesupd,function(err,result){
 					console.log("sqlstr update.");
-					if (err) return  res.send(err);
+					if (err) {SqlQc.release(); return  res.send(err);}
 					SqlQC.commit(function(err) {
         				   if (err) {
           				     SqlQC.rollback(function() {
           				     });
 						   console.log(err);
+						   SqlQC.release();
 					   return res.end(err);
         				 }});
+					SqlQC.release();
 					return res.end(ticket);
 				});
 			}else {
 				SqlQC.query(sqlstrins,valuesins,function(err,result){
 					console.log("sqlstr insert.");
-					if (err) return res.end(err);
+					if (err) { SqlQC.release();return res.end(err);}
 					SqlQC.commit(function(err) {
         				  if (err) {
           				    SqlQC.rollback(function() {
           				    });
+						  SqlQC.release();
 					  return res.end(err);
         				 }});
+					SqlQC.release();
 					return res.end(ticket);
 				});
 			}
@@ -187,6 +195,12 @@ exports.submitUser = function(req,res){
      }).catch(e=>{
 	     console.log('[Error]'+e.message);
      });//isVerified
+		  }//if user exist
+			else{
+				console.log("[ERROR]:request duplicate.");
+				return res.status(400).end("{message:'request_duplicate'}");
+			}
+		});
 	//DbCon.commit();
 };
 
@@ -229,10 +243,6 @@ exports.submitConfirm = async function(req,res){
 		        	destination: destination.publicKey(),
 		        	startingBalance: conf.CreateAmnt//'3'
 		      	}))
-		      //.addOperation(StellarSdk.Operation.setOptions({
-                             //        homeDomain:conf.HomeDomain,
-                             //        inflationDest:conf.Inflation
-                             //}))
 		          .setTimeout(0)
 		      	.build();
     			transaction.sign(source);
@@ -243,16 +253,26 @@ exports.submitConfirm = async function(req,res){
 			 if ( resultsql.length ){
 				 return  res.status(406).send("{message:'corpid_duplicate'}");
 			 }else{
+				 console.log(sqlconfiguser);
+				 console.log(valueins);
 	                  SqlQ.getConnection(async function(err,SqlQC){
 		             await SqlQC.query(sqlconfiguser,valueins,async function(err,resultt){
+				     if ( !err ){
 			        await server.submitTransaction(transaction).then(async function(subresult){
 				          await SqlQC.commit(function(err){});
+					  SqlQC.release();
 					  return res.send(rows.accountid);
 				  }).catch(async function(error){
 					  console.log("submitError==>"+error);
 					  await SqlQC.rollback(function(err){});
+					  SqlQC.release();
 					  return res.status(406).send(error.response.data.extras.result_codes);
 				  });
+				     }else{
+					     console.log('[SqlError]'+err);
+					     SqlQC.release();
+					     return res.status(406).send("{message:'user_duplicate'}");
+				     }
 			        });//
 			      });//getconnection
 			    };//corp result
@@ -455,28 +475,28 @@ exports.buyAssetsTrustNeed = async function(sourcefeeid,sourceid,sequence,req,ca
 			  source:sourceID
                      }))
 	           }else{
-	             trans.addOperation(StellarSdk.Operation.allowTrust({
+	             trans/*.addOperation(StellarSdk.Operation.allowTrust({
 			trustor:destinationid,
 			assetCode:assetObj.getCode(),
 			authorize:true,
 			source:assetObj.getIssuer()
-		}))
+		}))*/
 		.addOperation(StellarSdk.Operation.payment({
 			destination:destinationid,
 			asset:assetObj,
 			amount:amount,
 			source:sourceID
-		}))
+		}))/*
 		.addOperation(StellarSdk.Operation.allowTrust({
 			trustor:destinationid,
                         assetCode:assetObj.getCode(),
                         authorize:false,
                         source:assetObj.getIssuer()
-		}))
+		}))*/
 	     }//operation added
 		var inTrans = trans.setTimeout(parseInt(conf.TimeOut)).build();
-		     if ( signtruster )	   
-		          inTrans.sign(signtruster);
+		     //if ( signtruster )	   
+		     //     inTrans.sign(signtruster);
 		     callback(null,inTrans.toXDR('base64'));
 		   }//if destinationid
 			else

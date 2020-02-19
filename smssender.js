@@ -10,9 +10,9 @@ class SmsSender{
 		//console.log(user,pass,fromnum,url);
 	}
 
-	async sendSms(code,tonum,callback){
+	 sendSms(code,tonum,callback){
 		//console.log(this.Url);
-		await axios({
+		 axios({
                   url: this.Url,
 
                   method: 'post', // default
@@ -27,11 +27,12 @@ class SmsSender{
 			 inputData:[{ "vcode":code }]
                    }
 
-                }).then(response=>{
+                })/*.then(response=>{
                         //console.log(response['isOwner']);
                         //console.log(response);
                         callback(response.data);
-                });
+                });*/
+		 callback("Ok");
 	}
 }
 
