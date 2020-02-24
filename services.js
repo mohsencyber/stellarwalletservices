@@ -474,7 +474,7 @@ exports.buyAssetsTrustNeed = async function(sourcefeeid,sourceid,sequence,req,ca
                              {
                                      console.log("exceed limit transaction");
                                      callback(400,"{message:'exceed_limit_transaction'}");
-                             }
+                             }else
 		       trans.addOperation(StellarSdk.Operation.payment({
                           destination:destinationid,
                           asset:assetObj,
