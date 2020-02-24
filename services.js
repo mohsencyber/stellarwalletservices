@@ -259,12 +259,13 @@ exports.submitConfirm = async function(req,res){
 		             await SqlQC.query(sqlconfiguser,valueins,async function(err,resultt){
 				     if ( !err ){
 			        await server.submitTransaction(transaction).then(async function(subresult){
+					  console.log("submit trans create acc");
 				          await SqlQC.commit(function(err){});
 					  SqlQC.release();
 					  return res.send(rows.accountid);
 				  }).catch(async function(error){
 					  console.log("submitError==>"+error);
-					  await SqlQC.rollback(function(err){});
+					  await SqlQC.rollback(function(err){console.log(err)});
 					  await SqlQC.query("delete from users where id=? ",[rows.accountid]);
 					  SqlQC.release();
 					  return res.status(406).send(error.response.data.extras.result_codes);
@@ -469,6 +470,11 @@ exports.buyAssetsTrustNeed = async function(sourcefeeid,sourceid,sequence,req,ca
 		        networkPassphrase:conf.NetworkPass
 	              });
 	             if( assetObj.isNative() ){
+			     if ( parseFloat(amount) > parseFloat(conf.NativeLimitAmnt ))
+                             {
+                                     console.log("exceed limit transaction");
+                                     callback(400,"{message:'exceed_limit_transaction'}");
+                             }
 		       trans.addOperation(StellarSdk.Operation.payment({
                           destination:destinationid,
                           asset:assetObj,
