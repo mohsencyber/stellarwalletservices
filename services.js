@@ -265,6 +265,7 @@ exports.submitConfirm = async function(req,res){
 				  }).catch(async function(error){
 					  console.log("submitError==>"+error);
 					  await SqlQC.rollback(function(err){});
+					  await SqlQC.query("delete from users where id=? ",[rows.accountid]);
 					  SqlQC.release();
 					  return res.status(406).send(error.response.data.extras.result_codes);
 				  });
