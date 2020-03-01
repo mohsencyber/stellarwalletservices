@@ -382,6 +382,7 @@ exports.transferTo = async function(req,res){
 	var accountID = req.body.accountid;
 	var destinationID =  new KuknosID(req.body.destinationid);
 	var amount = req.body.amount;
+	if (parseInt(amount)<= conf.TransferLimit){
 	var additionalFee=0;
         if ( req.body.additionalfee )
 		additionalFee = parseInt(req.body.additionalfee);
@@ -425,6 +426,10 @@ exports.transferTo = async function(req,res){
 
 	});
 	});
+	}else{
+                console.log("exceed limit transfer");
+                return res.status(400).end("{message:'exceed_limit_transaction'}");
+        }
 
 };//end func
 
@@ -474,7 +479,7 @@ exports.buyAssetsTrustNeed = async function(sourcefeeid,sourceid,sequence,req,ca
                              {
                                      console.log("exceed limit transaction");
                                      callback(400,"{message:'exceed_limit_transaction'}");
-                             }else
+                             }
 		       trans.addOperation(StellarSdk.Operation.payment({
                           destination:destinationid,
                           asset:assetObj,
