@@ -101,7 +101,7 @@ module.exports = function(app) {
 		  myfunc.buyAssets(req,res);
 		}else {
 			console.log("Request Not Verified.");
-			return res.status(401).end("{message:'not_permitted'}");
+			return res.status(401).end("{message:'ap_not_permitted'}");
 		}
 		}catch(err){
                            console.log(err);
