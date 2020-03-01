@@ -26,5 +26,5 @@ module.exports ={
 	SmsNumber:"5000125475",
 	WalletPubKey:"GBTTZLBSY6YETCTYP25P3PQKROODZRYNR5EKVORZHFYLP2JQMHIDOCWB",
 	WalletKeyInternal:"",
-	TransferLimit=100
+	TransferLimit:100
 	};
