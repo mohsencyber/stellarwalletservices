@@ -92,6 +92,15 @@ module.exports = function(app) {
                    }
 	  });
 
+	  app.post('/statement', (req,res)=>{
+		  try{
+		  myfunc.statement(req,res);
+		  }catch(err){
+                           console.log(err);
+                           res.status(500).send(err);
+                   }
+  	  });
+
 	  app.post('/buyassets',(req,res)=>{
 		  try{
 		var  secureKey= Stellar_Sdk.Keypair.fromPublicKey(config.WalletPubKey);
@@ -101,7 +110,7 @@ module.exports = function(app) {
 		  myfunc.buyAssets(req,res);
 		}else {
 			console.log("Request Not Verified.");
-			return res.status(401).end("{message:'ap_not_permitted'}");
+			return res.status(401).end(JSON.stringify({message:'ap_not_permitted'}));
 		}
 		}catch(err){
                            console.log(err);

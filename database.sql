@@ -4,7 +4,7 @@ CREATE TABLE `assets` (
   `id` int(6) auto_increment Primary key,
   `assetissuer` varchar(60) DEFAULT NULL,
   `assetcode` varchar(20) DEFAULT NULL,
-  `trustsigner` varchar(60) DEFAULT NULL
+  `truster` varchar(60) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 DROP TABLE IF EXISTS `sessions`;
