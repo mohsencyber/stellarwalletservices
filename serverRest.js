@@ -1,3 +1,4 @@
+require('log-timestamp');
 var Ddos = require('ddos');
 var express = require('express'),
   app = express(),
@@ -60,6 +61,6 @@ else
 //    res.status(404).send({url: req.originalUrl + ' not found '})
 //  });
 
-app.listen(port);
+app.listen(port).setTimeout(400000);
 
 console.log('ABPA Keycermony RESTful API server started on: ' + port);
