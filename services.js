@@ -681,7 +681,7 @@ exports.statement = async function(req,res){
 	assetCode= req.body.assetcode;
   if (assetCode == "PMN" ) 
 	assetType="native";
-  if ( req.body.paymentype )
+  if ( req.body.paymenttype )
 	paymentType = req.body.paymenttype;
   var myPublicKey = req.body.accountid;
   var paymentCall = await server.payments()
@@ -695,34 +695,42 @@ exports.statement = async function(req,res){
                 .call()
         	.then( async (page)=>{
                 var j=0;
-                for ( j =0; j< page.records.length ; j++){
-			if ( i >= length ) break;
-	                if(page.records[j].type=="payment"){
-				if ( assetCode == "" && paymentType == "" ) 
-				{
-					found = true;
-				}
-				else if( ( page.records[j].asset_type == assetType )
-					|| ( page.records[j].asset_type !="native" && page.records[j].asset_code == assetCode ) )
-				{
-	                        	found=true;
-				}
+		for ( j =0; j< page.records.length ; j++){
+                        if ( i >= length ) break;
+                        if(page.records[j].type=="payment"){
+                                found = true;
+                                if( assetCode != "" )
+                                {
+                                        if (( page.records[j].asset_type == assetType )
+                                                || ( page.records[j].asset_type !="native" && page.records[j].asset_code == assetCode ))
+                                        {
+                                                found=true;
+                                        }else
+                                                found=false;
+                                }
 
-				else if ( (paymentType == "from" &&  age.records[j].from == myPublicKey ) ||
-				     (paymentType == "to" &&  age.records[j].to == myPublicKey ) )
-				{
-					found=true;
-				}
-
-				if ( found ) 
-				{
-	                        	i++;
-	                        	result.push(page.records[j]);
-				} 
-	                }
-                	offset=page.records[j].paging_token;
-			found = true;
-                 }
+                                if ( paymentType != "" && found )
+                                {
+                                        if ( paymentType == "from" ) {
+                                                if( page.records[j].from == myPublicKey )
+                                        {
+                                                found=true;
+                                        }else
+                                                found=false;
+                                        }else if (paymentType == "to" &&  page.records[j].to == myPublicKey )
+                                        {
+                                                found=true;
+                                        }else
+                                                found=false;
+                                }
+                                if ( found )
+                                {
+                                        i++;
+                                        result.push(page.records[j]);
+                                }
+                        }
+                        offset=page.records[j].paging_token;
+		}
         	});
 
 		
