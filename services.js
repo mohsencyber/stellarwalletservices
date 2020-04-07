@@ -24,6 +24,7 @@ StellarSdk.Config.setAllowHttp(conf.AllowHttp);
 const publicKey='GDKHHHLBBCAEUD54ZBGXNFSXBR37EUHJCKGXOFTJLXXLIA75TNK533SI';//test
 const secretKey='SCOE3UNFCGYGKHWLLEG2KONSE7OYXHTWTTEGCQ6B2VYP5HH76S6PYOGI';//test
 const  server = new StellarSdk.Server(conf.HorizonUrl);//'https://hz1-test.kuknos.org');
+const server_statement = new StellarSdk.Server('https://horizon.kuknos.org');
 
 async function getAccountInfo(accid){
 	var resultJson;
@@ -684,7 +685,7 @@ exports.statement = async function(req,res){
   if ( req.body.paymenttype )
 	paymentType = req.body.paymenttype;
   var myPublicKey = req.body.accountid;
-  var paymentCall = await server.payments()
+  var paymentCall = await server_statement.payments()
         .forAccount(myPublicKey)
         .limit(100)
         .order(order);
