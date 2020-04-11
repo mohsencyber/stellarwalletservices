@@ -745,7 +745,7 @@ exports.statement = async function(req,res){
 	return res.end(JSON.stringify(result));
 };
 
-exports.chargeaccount = function(req,res){
+exports.chargeaccount = async function(req,res){
 	var assetCode = req.body.assetcode;
 	var assetIssuer = req.body.assetissuer;
 	var srcAccount ;
