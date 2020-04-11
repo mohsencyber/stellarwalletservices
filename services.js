@@ -18,6 +18,11 @@ global.SHAHKAR_URL=conf.ShahkarUrl;
 
 StellarSdk.Config.setAllowHttp(conf.AllowHttp);
 
+const PMNPublicSrc='GD2YOX2GL3LQQKLNBKRG3H2MXRLCL6OM24PRXATIWC2RHD4Q6EE44BUL';//live
+const TokenPublicSrc='GBRWNYWOOFSNOQTPURSTNOYCKFT37C6D62POLSDR43MHZOQASKERSZY2';//live
+//const PMNPublicSrc='GDKHHHLBBCAEUD54ZBGXNFSXBR37EUHJCKGXOFTJLXXLIA75TNK533SI';//test
+//const TokenPublicSrc='GCGCUPOOBBWC4PX6RFQC7IAE5EQSTCWACHD3KUKIVV7BCR65PDABRI4J';//test
+
 //accID tecvest = 'GD2YOX2GL3LQQKLNBKRG3H2MXRLCL6OM24PRXATIWC2RHD4Q6EE44BUL';
 //const publicKey='GBQ7LPNULIXKQHZNFUUA7QURKZG4QHYE5LI6QPDKRWTT37BDTSW6DBVC';//live
 //const secretKey='SCOEJGH5I23FLXYMD3ZVNUMUVHMBD5T3UZB36PAWSLXIB5LYDI7X3BVC';//live
@@ -739,3 +744,49 @@ exports.statement = async function(req,res){
 
 	return res.end(JSON.stringify(result));
 };
+
+exports.chargeaccount = function(req,res){
+	var assetCode = req.body.assetcode;
+	var assetIssuer = req.body.assetissuer;
+	var srcAccount ;
+	var destinationId = req.body.destinationid;
+	var  amount = req.body.amount;
+	if ( assetCode == "PMN" ){
+		srcAccount = PMNPublicSrc;
+	}else{
+		srcAccount = TokenPublicSrc;
+	}
+	var asset = new Assets(assetCode,assetIssuer,req.body.assetid);
+	var memotype = StellarSdk.MemoText;
+    if ( req.body.memotype == 'hash' )
+        memotype = StellarSdk.MemoHash;
+    if ( !req.body.memo )
+        memotype = StellarSdk.MemoNone;
+    var memoObj = new StellarSdk.Memo(memotype,req.body.memo);
+	
+	var assetObj = await asset.getAssetObj(SqlQ,async function(assetObj){
+
+	    //console.log(assetObj);
+		//console.log(assetObj,accountID);
+		const accountSrc = await server.loadAccount(srcAccount).then(accountSrc =>{
+		//.catch(errors=>{
+			//console.log("account error: ", errors);
+			//return res.status(404).end("Account not found");
+		//});
+		const transaction = new StellarSdk.TransactionBuilder(accountSrc, {
+			memo: memoObj,
+			fee:conf.BaseFee,
+			networkPassphrase: conf.NetworkPass
+		}).addOperation(StellarSdk.Operation.payment({
+      			destination: destinationId,
+			asset: assetObj,
+			amount:amount,
+		})).setTimeout(0)
+		.build();
+		return res.end(transaction.toXDR('base64'));
+		}).catch(errors=>{
+                        console.log("account error: ", errors);
+                        return res.status(404).end(JSON.stringify({message:'ap_src_not_found'}));
+                });
+	});
+};//end func charge
