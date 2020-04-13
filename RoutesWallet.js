@@ -120,7 +120,7 @@ module.exports = function(app) {
 
 	  app.post('/chargeaccount',(req,res)=>{
 		  try{
-
+			  myfunc.chargeaccount(req,res);
 		  }catch(err){
 			  console.log(err);
 			  res.status(500).send(err);
