@@ -50,7 +50,12 @@ KuknosID.prototype.getAccountID = async function(SqlConn,callback) {
 			//callback();
 		}
 	}else {
-	   callback( this.accountID) ; 
+		try{
+			var KeyAcc = StellarSdk.Keypair.fromPublicKey(this.accountID);
+	   		callback( this.accountID) ; 
+		}catch(err){
+			callback();
+		}
 	}
 }
 

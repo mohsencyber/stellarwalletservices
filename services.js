@@ -408,29 +408,30 @@ exports.transferTo = async function(req,res){
 		console.log("==>"+destinationid+"<==");
 		if ( !destinationid )
 			return res.status(404).end(JSON.stringify({message:'ap_dest_not_found'}));
-		console.log(assetObj,accountID);
-		const accountSrc = await server.loadAccount(accountID).then(accountSrc =>{
-		//.catch(errors=>{
-			//console.log("account error: ", errors);
-			//return res.status(404).end("Account not found");
-		//});
-		const transaction = new StellarSdk.TransactionBuilder(accountSrc, {
-			memo: memoObj,
-			fee:conf.BaseFee+additionalFee,
-			networkPassphrase: conf.NetworkPass
-		}).addOperation(StellarSdk.Operation.payment({
-      			destination: destinationid,
-			asset: assetObj,//asset.getAssetObj(SqlQ),
-			amount:amount,
-		})).setTimeout(0)
-		.build();
-		return res.end(transaction.toXDR('base64'));
-		}).catch(errors=>{
-                        console.log("account error: ", errors);
-                        return res.status(404).end(JSON.stringify({message:'ap_src_not_found'}));
-                });
-
-	});
+			{
+			console.log(assetObj,accountID);
+			const accountSrc = await server.loadAccount(accountID).then(accountSrc =>{
+			//.catch(errors=>{
+				//console.log("account error: ", errors);
+				//return res.status(404).end("Account not found");
+			//});
+			const transaction = new StellarSdk.TransactionBuilder(accountSrc, {
+				memo: memoObj,
+				fee:conf.BaseFee+additionalFee,
+				networkPassphrase: conf.NetworkPass
+			}).addOperation(StellarSdk.Operation.payment({
+					destination: destinationid,
+				asset: assetObj,//asset.getAssetObj(SqlQ),
+				amount:amount,
+			})).setTimeout(0)
+			.build();
+			return res.end(transaction.toXDR('base64'));
+			}).catch(errors=>{
+							console.log("account error: ", errors);
+							return res.status(404).end(JSON.stringify({message:'ap_src_not_found'}));
+					});
+			}
+		});
 	});
 	}else{
                 console.log("exceed limit transfer");
