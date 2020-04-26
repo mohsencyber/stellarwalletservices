@@ -129,12 +129,12 @@ module.exports = function(app) {
 		  }
 		  var WalletKeyInt = req.body.nationalcode+","+req.body.mobilenumber+","+req.body.accountid;
 		  console.log(WalletKeyInt);
-		  //if ( secureKey.verify(WalletKeyInt,Buffer.from(req.body.secureKey,'base64')) ) {
+		  if ( secureKey.verify(WalletKeyInt,Buffer.from(req.body.secureKey,'base64')) ) {
 			  myfunc.manageUser(req,res);
-		  /*}else{
+		  }else{
 			  console.log("Request not verified.");
 			  return res.status(401).end(JSON.stringify({message:'ap_not_permitted'}));
-		  }*/
+		  }
 		}catch(err){
 			console.log(err);return res.status(500).end(err);
 		}
