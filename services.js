@@ -18,10 +18,10 @@ global.SHAHKAR_URL=conf.ShahkarUrl;
 
 StellarSdk.Config.setAllowHttp(conf.AllowHttp);
 
-const PMNPublicSrc='GD2YOX2GL3LQQKLNBKRG3H2MXRLCL6OM24PRXATIWC2RHD4Q6EE44BUL';//live
-const TokenPublicSrc='GBRWNYWOOFSNOQTPURSTNOYCKFT37C6D62POLSDR43MHZOQASKERSZY2';//live
-//const PMNPublicSrc='GDKHHHLBBCAEUD54ZBGXNFSXBR37EUHJCKGXOFTJLXXLIA75TNK533SI';//test
-//const TokenPublicSrc='GCGCUPOOBBWC4PX6RFQC7IAE5EQSTCWACHD3KUKIVV7BCR65PDABRI4J';//test
+//const PMNPublicSrc='GD2YOX2GL3LQQKLNBKRG3H2MXRLCL6OM24PRXATIWC2RHD4Q6EE44BUL';//live
+//const TokenPublicSrc='GBRWNYWOOFSNOQTPURSTNOYCKFT37C6D62POLSDR43MHZOQASKERSZY2';//live
+const PMNPublicSrc='GDKHHHLBBCAEUD54ZBGXNFSXBR37EUHJCKGXOFTJLXXLIA75TNK533SI';//test
+const TokenPublicSrc='GCGCUPOOBBWC4PX6RFQC7IAE5EQSTCWACHD3KUKIVV7BCR65PDABRI4J';//test
 
 //accID tecvest = 'GD2YOX2GL3LQQKLNBKRG3H2MXRLCL6OM24PRXATIWC2RHD4Q6EE44BUL';
 //const publicKey='GBQ7LPNULIXKQHZNFUUA7QURKZG4QHYE5LI6QPDKRWTT37BDTSW6DBVC';//live
@@ -60,7 +60,8 @@ exports.accountinfo = async function(req,res){
 			accInfoJson = results;//JSON.parse(JSON.stringify(results));
 			//console.log(accInfoJson);
 	if ( !userinfo ){ //userid in accountid
-	await SqlQ.query(sqluser,value,function(err,result){
+
+	await SqlQ.query(sqluser,value,async function(err,result){
 		if ( err ) console.log(err);
 		if ( result.length ){
 			userInfoJson = result[0];//JSON.parse(JSON.stringify(result[0]));
@@ -74,8 +75,19 @@ exports.accountinfo = async function(req,res){
 			return res.status(200).json(alldata);
 		}else{
 			console.log("AccInfo:");
+			var sqlhistory = "select * from users_history where id = ? ";
+			var valuehistory = [ireq];
+			var isArchive={archive:"yes"};
+			var alldata2;
+			await SqlQ.query(sqlhistory,valuehistory,(err,his_res)=>{
+				if (his_res.length){
+					alldata2={...isArchive,...accInfoJson};
+					return res.json(alldata2);
+				}else{
+					return res.json(accInfoJson);
+				}
+			});	
 			//console.log(accInfoJson);
-			return res.json(accInfoJson);
 		}
 	});//end query
 	}else{
@@ -88,7 +100,6 @@ exports.accountinfo = async function(req,res){
 		    alldata=userinfo;
 		return res.status(200).json(alldata);
 	}
-
 		}).catch(err => {
 			console.log("====>",err);
 			return res.status(404).end(JSON.stringify({message:'ap_account_not_found'}));
@@ -127,7 +138,6 @@ exports.postTransaction = function(req,res){
 		console.log(err);
 	});
 };
-
 
 
 exports.submitUser = function(req,res){
@@ -208,6 +218,188 @@ exports.submitUser = function(req,res){
 			}
 		});
 	//DbCon.commit();
+};
+
+async function CreateAccount(accountID,additionalFee,sqlok,valueok,sqlrollback,valueback,callback){
+
+	var source = StellarSdk.Keypair.fromSecret(secretKey);
+	var destination= StellarSdk.Keypair.fromPublicKey(accountID);
+	var transferAuth = new TransferAuthorize(SqlQ,StellarSdk,conf,server);
+try{
+await transferAuth.isNativePermitted(source.publicKey(),async (result)=>{
+	if (result){
+		await server.accounts()
+	.accountId(source.publicKey())
+	.call()
+	.then(async ({ sequence }) => {
+	  const account = new StellarSdk.Account(source.publicKey(), sequence)
+	  const transaction = new StellarSdk.TransactionBuilder(account, {
+		fee: conf.BaseFee+additionalFee,//StellarSdk.BASE_FEE,
+		networkPassphrase: conf.NetworkPass//'Kuknos-NET'
+	  })
+		.addOperation(StellarSdk.Operation.createAccount({
+		  destination: destination.publicKey(),
+		  startingBalance: conf.CreateAmnt//'3'
+		}))
+		.setTimeout(0)
+		.build();
+	  transaction.sign(source);
+	  //var valueins=[accountID,personality?nationalCode:corpID,conf.HomeDomain,mobileNumber,"",nationalCode,fullName,personality,corpID];
+	   //console.log(sqlconfiguser);
+	   //console.log(valueins);
+			SqlQ.getConnection(async function(err,SqlQC){
+		   await SqlQC.query(sqlok,valueok,async function(err,resultt){
+		   if ( !err ){
+		  await server.submitTransaction(transaction).then(async function(subresult){
+			console.log("submit trans create acc");
+				await SqlQC.commit(function(err){});
+			SqlQC.release();
+			callback(true);
+		}).catch(async function(error){
+			console.log("submitError==>"+error);
+			await SqlQC.rollback(function(err){console.log(err)});
+			await SqlQC.query(sqlrollback,valueback);
+			SqlQC.release();
+			callback(false,error);
+		});
+		   }else{
+			   console.log('[SqlError]'+err);
+			   SqlQC.release();
+			   callback(false);
+		   }
+		  });//
+		});//getconnection
+		});
+}else
+	{
+		console.log("[error-create-account]transfer from this sources is not permitted.");
+		callback(false,JSON.stringify({message:'ap_transfer_not_permitted'}));
+	}
+});//
+  }catch(errors){
+	  console.log("[errors2]:"+errors);
+	  callback(false);
+		};
+};
+
+exports.manageUser = async function(req,res){
+	var accountID = req.body.accountid;
+	var oldaccountID;
+	var nationalCode = req.body.nationalcode;
+	var oldnationalCode;
+	var fullName = req.body.fullname;
+	var oldfullName;
+	var mobileNumber = req.body.mobilenumber;
+	var oldmobileNumber;
+	var corpID = req.body.corpid;
+	var personality = req.body.personality;
+	var additionalFee=0;
+	var username = (personality?nationalCode:corpID);
+	if ( req.body.additionalfee )
+	additionalFee = parseInt(req.body.additionalfee);
+	var duplicateCheckNeeded = parseInt(req.body.duplicatecheck) ;
+	var SqlUser = "select * from users where username = ?";
+	var sqlUserVal = [username];
+	SqlQ.query( SqlUser , sqlUserVal ,async (err,resultuser)=>{
+		if ( !resultuser.length || !duplicateCheckNeeded ){
+			if ( resultuser.length ){
+				var rows = resultuser[0];
+				var sqlconfiguser= "insert into users (id,username,domain,mobilenumber,email,nationalcode,fullname,personality,corpid)values(?,?,?,?,?,?,?,?,?)";
+				oldaccountID = rows.id;
+				oldfullName = rows.fullname;
+				oldmobileNumber = rows.mobilenumber;
+				oldnationalCode = rows.nationalcode;
+                if ( oldaccountID == accountID ){
+					sqlconfiguser = "update users set mobilenumber = ? , nationalcode = ? , fullname = ? where id = ? ";
+					var valueup = [mobileNumber,nationalCode,fullName,oldaccountID];
+					SqlQ.query(sqlconfiguser,valueup,(err,ress)=>{
+						console.log("user updated");
+						return res.end(accountID);
+					});
+				}else{
+					//create new acc and history oldacc , update user
+					var sqlok = "update users set id = ? , mobilenumber = ? , nationalcode = ? , fullname  = ? where id = ?";
+					var valueok = [accountID,mobileNumber,nationalCode,fullName,oldaccountID];
+					var sqlrollback = "update users set id = ? , mobilenumber = ? , nationalcode = ? , fullname  = ? where id = ?";
+					var valueback = [oldaccountID,oldmobileNumber,oldnationalCode,oldfullName,accountID];
+					SqlQ.query("insert into users_history (id,username,fullname,nationalcode,mobilenumber ) values ( ?, ? , ? , ? )",[oldaccountID,rows.username,oldfullName,oldnationalCode,oldmobileNumber]);
+
+					await CreateAccount(accountID,additionalFee,sqlok,valueok,sqlrollback,valueback,async (resultCA,message)=>{
+						if ( resultCA){
+							return res.end(accountID);
+						}else{
+							return res.status(401).end(message);
+						}
+					});
+				}
+			}else{
+				console.log("new user added");
+				var sqlconfiguser= "insert into users (id,username,domain,mobilenumber,email,nationalcode,fullname,personality,corpid)values(?,?,?,?,?,?,?,?,?)";
+				var valueins=[accountID,personality?nationalCode:corpID,conf.HomeDomain,mobileNumber,"",nationalCode,fullName,personality,corpID];
+				var source = StellarSdk.Keypair.fromSecret(secretKey);
+			  var destination= StellarSdk.Keypair.fromPublicKey(accountID);
+			  var transferAuth = new TransferAuthorize(SqlQ,StellarSdk,conf,server);
+		try{
+		  await transferAuth.isNativePermitted(source.publicKey(),async (result)=>{
+	          if (result){
+	    	 	 await server.accounts()
+			  .accountId(source.publicKey())
+			  .call()
+			  .then(async ({ sequence }) => {
+		   	 const account = new StellarSdk.Account(source.publicKey(), sequence)
+		    	const transaction = new StellarSdk.TransactionBuilder(account, {
+		     	 fee: conf.BaseFee+additionalFee,//StellarSdk.BASE_FEE,
+		     	 networkPassphrase: conf.NetworkPass//'Kuknos-NET'
+		   	 })
+		      	.addOperation(StellarSdk.Operation.createAccount({
+		        	destination: destination.publicKey(),
+		        	startingBalance: conf.CreateAmnt//'3'
+		      	}))
+		          .setTimeout(0)
+		      	.build();
+    			transaction.sign(source);
+				var valueins=[accountID,personality?nationalCode:corpID,conf.HomeDomain,mobileNumber,"",nationalCode,fullName,personality,corpID];
+				 console.log(sqlconfiguser);
+				 console.log(valueins);
+	                  SqlQ.getConnection(async function(err,SqlQC){
+		             await SqlQC.query(sqlconfiguser,valueins,async function(err,resultt){
+				     if ( !err ){
+			        await server.submitTransaction(transaction).then(async function(subresult){
+					  console.log("submit trans create acc");
+				          await SqlQC.commit(function(err){});
+					  SqlQC.release();
+					  return res.send(accountID);
+				  }).catch(async function(error){
+					  console.log("submitError==>"+error);
+					  await SqlQC.rollback(function(err){console.log(err)});
+					  await SqlQC.query("delete from users where id=? ",[accountID]);
+					  SqlQC.release();
+					  return res.status(406).send(error.response.data.extras.result_codes);
+				  });
+				     }else{
+					     console.log('[SqlError]'+err);
+					     SqlQC.release();
+					     return res.status(406).send(JSON.stringify({message:'ap_user_duplicate'}));
+				     }
+			        });//
+			      });//getconnection
+          		});
+		  }else
+			  {
+				  console.log("[error-create-account]transfer from this sources is not permitted.");
+				  return res.status(401).send(JSON.stringify({message:'ap_transfer_not_permitted'}));
+			  }
+		  });//
+			}catch(errors){
+				console.log("[errors2]:"+errors);
+				return res.status(404).end(errors);
+			      };
+			}
+		}else {
+			console.log("user duplicated");
+			return res.status(400).end(JSON.stringify({message:'ap_request_duplicate'}));
+		}
+	});
 };
 
 exports.submitConfirm = async function(req,res){
@@ -751,6 +943,7 @@ exports.chargeaccount = async function(req,res){
 	var assetIssuer = req.body.assetissuer;
 	var srcAccount ;
 	var destinationId = req.body.destinationid;
+	console.log("chargeaccount start.");
 	var  amount = req.body.amount;
 	if ( assetCode == "PMN" ){
 		srcAccount = PMNPublicSrc;
@@ -767,7 +960,7 @@ exports.chargeaccount = async function(req,res){
 	
 	var assetObj = await asset.getAssetObj(SqlQ,async function(assetObj){
 
-	    //console.log(assetObj);
+	    	//console.log(assetObj);
 		//console.log(assetObj,accountID);
 		const accountSrc = await server.loadAccount(srcAccount).then(accountSrc =>{
 		//.catch(errors=>{

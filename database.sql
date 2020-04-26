@@ -22,6 +22,18 @@ CREATE TABLE `sessions` (
   PRIMARY KEY (`nationalcode`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
+DROP TABLE IF EXISTS `users_history`;
+CREATE TABLE `users_history` (
+  `id` varchar(255) NOT NULL,
+  `username` varchar(255) CHARACTER SET utf8 DEFAULT NULL,
+  `mobilenumber` varchar(255) CHARACTER SET utf8 DEFAULT NULL,
+  `nationalcode` varchar(255) CHARACTER SET utf8 NOT NULL,
+  `fullname` varchar(255) CHARACTER SET utf8 DEFAULT NULL,
+  `personality` int(2) DEFAULT NULL,
+  `corpid` varchar(20) CHARACTER SET utf8 DEFAULT NULL,
+  `changetime` timestamp not null default current_timestamp on update current_timestamp
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
 DROP TABLE IF EXISTS `users`;
 CREATE TABLE `users` (
   `id` varchar(255) NOT NULL,

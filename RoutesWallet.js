@@ -2,6 +2,9 @@
 
 var  Stellar_Sdk=require('stellar-sdk');
 var  config  = require('./config.js');
+var  channelKey = new Map();
+
+channelKey.set('tecvest','GBTTZLBSY6YETCTYP25P3PQKROODZRYNR5EKVORZHFYLP2JQMHIDOCWB');
 
 module.exports = function(app) {
   //var kuknosService = require('./serviceController');
@@ -116,6 +119,28 @@ module.exports = function(app) {
                            console.log(err);
                            res.status(500).send(err);
                    }
+	  });
+
+	  app.post('/manageuser',(req,res)=>{
+		try{  
+		  var secureKey = Stellar_Sdk.Keypair.fromPublicKey(config.WalletPubKey);
+		  if ( req.body.channelname && channelKey.has(req.body.channelname) ){
+			  secureKey = Stellar_Sdk.Keypair.fromPublicKey(channelKey.get(req.body.channelname));
+		  }
+		  var WalletKeyInt = req.body.nationalcode+","+req.body.mobilenumber+","+req.body.accountid;
+		  console.log(WalletKeyInt);
+		  //if ( secureKey.verify(WalletKeyInt,Buffer.from(req.body.secureKey,'base64')) ) {
+			  myfunc.manageUser(req,res);
+		  /*}else{
+			  console.log("Request not verified.");
+			  return res.status(401).end(JSON.stringify({message:'ap_not_permitted'}));
+		  }*/
+		}catch(err){
+			console.log(err);return res.status(500).end(err);
+		}
+
+
+
 	  });
 
 	  app.post('/chargeaccount',(req,res)=>{
