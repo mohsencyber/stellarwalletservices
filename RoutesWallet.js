@@ -129,7 +129,7 @@ module.exports = function(app) {
 		  }
 		  var WalletKeyInt = req.body.nationalcode+","+req.body.mobilenumber+","+req.body.accountid;
 		  console.log(WalletKeyInt);
-		  if ( secureKey.verify(WalletKeyInt,Buffer.from(req.body.secureKey,'base64')) ) {
+		  if ( secureKey.verify(WalletKeyInt,Buffer.from(req.body.securekey,'base64')) ) {
 			  myfunc.manageUser(req,res);
 		  }else{
 			  console.log("Request not verified.");
