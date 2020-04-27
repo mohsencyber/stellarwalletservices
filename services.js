@@ -283,6 +283,7 @@ await transferAuth.isNativePermitted(source.publicKey(),async (result)=>{
 };
 
 exports.manageUser = async function(req,res){
+	console.log("manageUser start.");
 	var accountID = req.body.accountid;
 	var oldaccountID;
 	var nationalCode = req.body.nationalcode;
@@ -322,8 +323,8 @@ exports.manageUser = async function(req,res){
 					var valueok = [accountID,mobileNumber,nationalCode,fullName,oldaccountID];
 					var sqlrollback = "update users set id = ? , mobilenumber = ? , nationalcode = ? , fullname  = ? where id = ?";
 					var valueback = [oldaccountID,oldmobileNumber,oldnationalCode,oldfullName,accountID];
-					SqlQ.query("insert into users_history (id,username,fullname,nationalcode,mobilenumber ) values ( ?, ? , ? , ? )",[oldaccountID,rows.username,oldfullName,oldnationalCode,oldmobileNumber]);
-
+					SqlQ.query("insert into users_history (id,username,fullname,nationalcode,mobilenumber ) values ( ?, ?, ?, ?, ? )",[oldaccountID,rows.username,oldfullName,oldnationalCode,oldmobileNumber],(err,logs)=>{console.log(err);});
+					console.log(oldaccountID,rows.username,oldfullName,oldnationalCode,oldmobileNumber);
 					await CreateAccount(accountID,additionalFee,sqlok,valueok,sqlrollback,valueback,async (resultCA,message)=>{
 						if ( resultCA){
 							return res.end(accountID);
