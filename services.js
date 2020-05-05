@@ -662,7 +662,7 @@ exports.buyAssetsTrustNeed = async function(sourcefeeid,sourceid,sequence,req,ca
 	       console.log(truster);
                var signtruster = null;
                var assetObj= asset.getAssetObj(SqlQ, async (assetObj)=>{
-               if ( !assetObj.isNative() )
+               if ( !assetObj.isNative() && truster != "-" ) //only for my tokens
 	          signtruster= StellarSdk.Keypair.fromSecret(truster);
                await transferAuth.isAssetPermitted(sourceID,amount,assetObj,async function(results){
                  if (results){
