@@ -398,7 +398,7 @@ exports.manageUser = async function(req,res){
 			}
 		}else {
 			console.log("user duplicated");
-			return res.status(400).end(JSON.stringify({message:'ap_request_duplicate'}));
+			return res.status(400).end(JSON.stringify({message:'ap_request_duplicate',currentaccount:resultuser[0].id }));
 		}
 	});
 };
