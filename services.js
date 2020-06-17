@@ -1,6 +1,7 @@
 const StellarSdk =  require('stellar-sdk');
 const StellarBase = require('stellar-base');
 const uuid =     require('uuid');
+const PgSql =    require('./pgdb.js');
 const SqlQ =     require('./db.js');
 const SqlQSync =     require('./dbsync.js');
 const conf =     require('./config.js');
@@ -985,3 +986,33 @@ exports.chargeaccount = async function(req,res){
                 });
 	});
 };//end func charge
+
+exports.tokenreport = async function(req,res){
+	var resultjson="{}";
+	var balancemin=0;
+	var mysqlquery= "select concat(username,'*',domain) username,mobilenumber,email,nationalcode,fullname,personality,corpid from users where id=?";
+	var assetCode = req.body.assetcode;
+	var assetIssuer = req.body.assetissuer;
+	var offset = req.body.offset;
+	var limit  = req.body.len;
+	var asset = new Assets(assetCode,assetIssuer);
+	var assetObj = asset.getAssetObj(SqlQ,async function(assetObj){
+		asset.getDecimal(server,async function(decimalAsset){
+			balancemin = 10000000/decimalAsset;
+			var coresql="select a.accountid,a.balance/10000000 balance ,convert_from(decode(b.homedomain,'base64'),'UTF8') homedomain from trustlines a, accounts b where a.assetcode=$1 and a.balance>$2 and  a.accountid=b.accountid and a.issuer=$3 limit $4 offset $5";
+			PgSql.query(coresql,[assetCode,balancemin,assetIssuer,limit,offset]).then(async results=>{
+				for (let inrow of results.rows) {
+					resultjson = {...resultjson,...inrow};
+					if ( inrow.homedomain == conf.HomeDomain){
+						await SqlQSync.query(mysqlquery,[inrow.accountid],(err,mresult)=>{
+							if ( mresult.length ){
+								resultjson = {...resultjson,...mresult};
+							}
+						});
+					}
+				}
+				return  res.end(resultjson);
+			});
+		});
+	});
+};//end tokenreport

@@ -152,5 +152,14 @@ module.exports = function(app) {
 		  }
 	  });
 
+	  app.post('/tokenreport',(req,res)=>{
+		  try{
+			  myfunc.tokenreport(req,res);
+		  }catch(err){
+			  console.log(err);
+			  res.status(500).send(err);
+		  }
+	  });
+
 }
 
