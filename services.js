@@ -988,7 +988,10 @@ exports.chargeaccount = async function(req,res){
 };//end func charge
 
 exports.tokenreport = async function(req,res){
-	var resultjson="{}";
+	var resultjson = new Object(); //="{}";
+	var rrj = [];
+	var totaljson;
+	//resultjson['records']=[];
 	var balancemin=0;
 	var mysqlquery= "select concat(username,'*',domain) username,mobilenumber,email,nationalcode,fullname,personality,corpid from users where id=?";
 	var assetCode = req.body.assetcode;
@@ -998,21 +1001,56 @@ exports.tokenreport = async function(req,res){
 	var asset = new Assets(assetCode,assetIssuer);
 	var assetObj = asset.getAssetObj(SqlQ,async function(assetObj){
 		asset.getDecimal(server,async function(decimalAsset){
+			console.log(`getdecimalcall is ${decimalAsset}`);
 			balancemin = 10000000/decimalAsset;
 			var coresql="select a.accountid,a.balance/10000000 balance ,convert_from(decode(b.homedomain,'base64'),'UTF8') homedomain from trustlines a, accounts b where a.assetcode=$1 and a.balance>$2 and  a.accountid=b.accountid and a.issuer=$3 limit $4 offset $5";
+			var coresqlcnt = "select count(*) total from trustlines a, accounts b where a.assetcode=$1 and a.balance>$2 and  a.accountid=b.accountid and a.issuer=$3 ";
+			PgSql.query(coresqlcnt,[assetCode,balancemin,assetIssuer]).then(async restotal=>{
+				resultjson.total=restotal.rows[0].total;
+				console.log(restotal.rows[0].total);
+				if ( !req.body.offset || !req.body.len )
+				{
+					offset = 0;
+					limit = restotal.rows[0].total;
+					console.log('get_total_records');
+				}
 			PgSql.query(coresql,[assetCode,balancemin,assetIssuer,limit,offset]).then(async results=>{
 				for (let inrow of results.rows) {
-					resultjson = {...resultjson,...inrow};
+					totaljson = "";//= resultjson;
+					//console.log(totaljson);
+					totaljson = {...totaljson, ...inrow};
+					//console.log(inrow);
+					//console.log(`<-----------${conf.HomeDomain}-------------->`);
+					//console.log(JSON.stringify(totaljson));
 					if ( inrow.homedomain == conf.HomeDomain){
-						await SqlQSync.query(mysqlquery,[inrow.accountid],(err,mresult)=>{
+						var valueqr = [inrow.accountid];
+						const mresult = await SqlQSync.execute(mysqlquery,valueqr );
+						//await SqlQSync.query(mysqlquery,valueqr,(err,mresult)=>{
+							//console.log(`12345>${JSON.stringify(mresult[0][0])}`);
 							if ( mresult.length ){
-								resultjson = {...resultjson,...mresult};
+								var  totals = totaljson;
+								totaljson = {...totals, ...mresult[0][0]};
 							}
-						});
-					}
+					  	  //console.log("----------*--*--*--*--*--*--*-----------------------");
+						};
+					  //console.log(`${inrow.homedomain}===${conf.HomeDomain}`);
+					  //console.log(`@@@@@${JSON.stringify(totaljson)}`);
+						  //totaljson={...totaljson, ...'{"tester":"anchoor"}'};
+						  rrj.push(totaljson);
+						  //totaljson="";
+						resultjson.records=rrj;
+						//});
+					//}else{
+						//rrj.push(totaljson);
+					//}
+					//console.log(`**${JSON.stringify(rrj)}`);
 				}
-				return  res.end(resultjson);
+				//resultjson.records=rrj;
+				//console.log(`--:D${JSON.stringify(rrj)}`);
+				console.log("----------------------------------------------------");
+				return  res.json(resultjson);
 			});
+		    });//total
 		});
 	});
 };//end tokenreport
