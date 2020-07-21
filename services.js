@@ -1017,36 +1017,18 @@ exports.tokenreport = async function(req,res){
 			PgSql.query(coresql,[assetCode,balancemin,assetIssuer,limit,offset]).then(async results=>{
 				for (let inrow of results.rows) {
 					totaljson = "";//= resultjson;
-					//console.log(totaljson);
 					totaljson = {...totaljson, ...inrow};
-					//console.log(inrow);
-					//console.log(`<-----------${conf.HomeDomain}-------------->`);
-					//console.log(JSON.stringify(totaljson));
 					if ( inrow.homedomain == conf.HomeDomain){
 						var valueqr = [inrow.accountid];
 						const mresult = await SqlQSync.execute(mysqlquery,valueqr );
-						//await SqlQSync.query(mysqlquery,valueqr,(err,mresult)=>{
-							//console.log(`12345>${JSON.stringify(mresult[0][0])}`);
 							if ( mresult.length ){
 								var  totals = totaljson;
 								totaljson = {...totals, ...mresult[0][0]};
 							}
-					  	  //console.log("----------*--*--*--*--*--*--*-----------------------");
 						};
-					  //console.log(`${inrow.homedomain}===${conf.HomeDomain}`);
-					  //console.log(`@@@@@${JSON.stringify(totaljson)}`);
-						  //totaljson={...totaljson, ...'{"tester":"anchoor"}'};
 						  rrj.push(totaljson);
-						  //totaljson="";
 						resultjson.records=rrj;
-						//});
-					//}else{
-						//rrj.push(totaljson);
-					//}
-					//console.log(`**${JSON.stringify(rrj)}`);
 				}
-				//resultjson.records=rrj;
-				//console.log(`--:D${JSON.stringify(rrj)}`);
 				console.log("----------------------------------------------------");
 				return  res.json(resultjson);
 			});

@@ -96,17 +96,20 @@ Assets.prototype.getAssetObj = async function(SqlQ,callback){
 Assets.prototype.getDecimal = async function(server,callback){
 		var result = false;
 		  console.log("getDecimal Call ");
+		  var crcamount =1 ;
 		  await server.accounts()
 			  .accountId(this.assetIssuer)//StellarSdk.Keypair.fromPublicKey(publicKey))
 				  .call()
 				  .then(async (results)=> {
 					await inStellarSdk.StellarTomlResolver.resolve(results.home_domain).then( async response => {
-						callback(await  response.CURRENCIES.find(element => {
+						await  response.CURRENCIES.find(element => {
 									if ( element.code== this.assetCode ){
-										var crcamount = Math.pow(10,element.display_decimals);
+										crcamount = Math.pow(10,element.display_decimals);
+										console.log("crcamount ",crcamount);
 										return crcamount;
 									}
-							}) );
+							});
+						callback(crcamount);
 					});
 			   });
 }
