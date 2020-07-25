@@ -33,7 +33,13 @@ module.exports = function(app) {
 	  app.post('/PostTrans', (req,res)=>{
 		  //console.log(req);
 		  try {
-		  var txsubmit = myfunc.postTransaction(req.body.txdr,res);
+			  var xdrreq = req.body.txdr;
+			  var requestid = req.body.requestid;
+			  if ( requestid ) {
+				  myfunc.postRefTransaction(req,res);
+			  }else{
+		  		var txsubmit = myfunc.postTransaction(xdrreq,res);
+			  }
 		  //return res.send("Post Ok");
 		  }catch(err){
                            console.log(err);

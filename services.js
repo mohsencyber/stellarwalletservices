@@ -140,6 +140,74 @@ exports.postTransaction = function(req,res){
 	});
 };
 
+exports.postRefTransaction = function(req,res){
+//results =
+        var result;
+	var xdrreq = req.body.txdr
+
+	var id = req.body.requestid;
+        var sqlStr = " select * from buyrequest where requestid=? and destinationid is null";
+        var insSqlStr="insert into buyrequest (requestid,destinationid) values(?,null)";
+        var Values=[id];
+        var updateStr="update buyrequest set status='success' where requestid=? and destinationid is null";
+        var updateErrStr="update buyrequest set status='fail' where requestid=? and destinationid is null";
+        SqlQ.query(sqlStr,Values,async (err,resultid)=>{
+        if ( resultid.length || err ){
+                return res.status(401).send(JSON.stringify({message:'ap_transaction_duplicate'}));
+        }else{
+            try{
+                SqlQ.query(insSqlStr,Values, async (error,results)=>{
+                        if (error )
+                                return  res.status(401).end("Internal server Error.");
+        	//console.log(req);
+	        const transaction = new StellarBase.Transaction(xdrreq,conf.NetworkPass);
+	        var srcTrns = StellarBase.StrKey.encodeEd25519PublicKey(transaction.toEnvelope().tx().sourceAccount().ed25519());
+	        var operations = transaction.operations;//transaction.toEnvelope().tx().operations();
+	        var transferAuth = new TransferAuthorize(SqlQSync,StellarSdk,conf,server);
+	        transferAuth.isOperationPermitted(srcTrns,operations, (result)=>{
+                console.log(`[PostTrans]isOperationPermitted result is ${result}:`);
+                  if ( result ){
+                          console.log("isPermitted")
+                          server.submitTransaction(transaction).then (subres => {
+                                          SqlQ.query(updateStr,Values,async (error,results)=>{
+                                                  if (error ){
+                                                          console.log(`[ERROR]${error}`);
+                                                          return  res.status(401).end("Internal server error");
+                                                    }else
+                                                       //return res.send(subres.ledger.toString());
+                                  	  	       return res.send(JSON.stringify(subres));
+                                          })
+                         }).catch(err =>{
+                                  console.log(err.response.data.extras.result_codes);
+                                  SqlQ.query(updateErrStr,Values,(errm,ress)=>{
+                                          console.log(errm);
+                                  });
+                                  return  res.status(406).send(err.response.data.extras.result_codes);
+                          } );
+                  }
+                  else{
+                          SqlQ.query(updateErrStr,Values,(errm,ress)=>{
+                                  console.log(errm);
+                          });
+                          return res.status(401).send(JSON.stringify({message:'ap_transfer_not_permitted'}));
+	  	  }
+                }).catch( err=>{
+                        SqlQ.query(updateErrStr,Values,(errm,ress)=>{
+                                console.log(errm);
+                        });
+                        console.log(err);
+       	              });
+	        });
+             }catch(error){
+                   SqlQ.query(updateErrStr,Values,(err,ress)=>{
+                                console.log(error);
+                                return res.status(401).end(error);
+                        });
+             }
+	   }//else
+	});
+};
+
 
 exports.submitUser = function(req,res){
 	var result;
