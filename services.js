@@ -824,8 +824,12 @@ exports.buyAssetsThird = async function(req,res){
 };
 
 exports.TransInquiry= async function (req,res){
-	var sqlstr = "select * from buyrequest where requestid=? and destinationid=?";
-	var values = [req.body.requestid,req.body.destinationid];
+	var sqlstr = "select * from buyrequest where requestid=? "
+        var vaules = [req.body.requestid];
+        if ( req.body.destinationid.length > 0 ) {
+                 sqlstr = "select * from buyrequest  where requestid=? and destinationid=?
+                 values = [req.body.requestid,req.body.destinationid];
+        }
 	SqlQ.query(sqlstr,values,(err,result)=>{
 		if (err)
 			return res.status(401).send("Internal server error");
@@ -1070,8 +1074,9 @@ exports.tokenreport = async function(req,res){
 	var assetObj = asset.getAssetObj(SqlQ,async function(assetObj){
 		asset.getDecimal(server,async function(decimalAsset){
 			console.log(`getdecimalcall is ${decimalAsset}`);
-			balancemin = 10000000/decimalAsset;
-			var coresql="select a.accountid,a.balance/10000000 balance ,convert_from(decode(b.homedomain,'base64'),'UTF8') homedomain from trustlines a, accounts b where a.assetcode=$1 and a.balance>$2 and  a.accountid=b.accountid and a.issuer=$3 limit $4 offset $5";
+			//balancemin = 10000000/decimalAsset;
+			balancemin=0;
+			var coresql="select a.accountid,a.balance/10000000.0 balance ,convert_from(decode(b.homedomain,'base64'),'UTF8') homedomain from trustlines a, accounts b where a.assetcode=$1 and a.balance>$2 and  a.accountid=b.accountid and a.issuer=$3 limit $4 offset $5";
 			var coresqlcnt = "select count(*) total from trustlines a, accounts b where a.assetcode=$1 and a.balance>$2 and  a.accountid=b.accountid and a.issuer=$3 ";
 			PgSql.query(coresqlcnt,[assetCode,balancemin,assetIssuer]).then(async restotal=>{
 				resultjson.total=restotal.rows[0].total;
