@@ -827,7 +827,7 @@ exports.TransInquiry= async function (req,res){
 	var sqlstr = "select * from buyrequest where requestid=? "
         var vaules = [req.body.requestid];
         if ( req.body.destinationid.length > 0 ) {
-                 sqlstr = "select * from buyrequest  where requestid=? and destinationid=?
+                 sqlstr = "select * from buyrequest  where requestid=? and destinationid=?";
                  values = [req.body.requestid,req.body.destinationid];
         }
 	SqlQ.query(sqlstr,values,(err,result)=>{
