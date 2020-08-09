@@ -167,5 +167,68 @@ module.exports = function(app) {
 		  }
 	  });
 
+	  app.post('/managebuyoffer',(req,res)=>{
+		try{
+			myfunc.manageBuyOffer(req,res);
+		}catch(err){
+			console.log(err);
+			res.status(500).send(err);
+		}
+	});
+
+	app.post('/manageselloffer',(req,res)=>{
+		try{
+			myfunc.manageSellOffer(req,res);
+		}catch(err){
+			console.log(err);
+			res.status(500).send(err);
+		}
+	});
+
+	app.post('/passiveselloffer',(req,res)=>{
+		try{
+			myfunc.createPassiveSellOffer(req,res);
+		}catch(err){
+			console.log(err);
+			res.status(500).send(err);
+		}
+	});
+
+	app.post('/myoffers',(req,res)=>{
+		try{
+			myfunc.myOffers(req,res);
+		}catch(err){
+			console.log(err);
+			res.status(500).send(err);
+		}
+	});
+
+	app.post('/orderbook',(req,res)=>{
+		try{
+			myfunc.orderbook(req,res);
+		}catch(err){
+			console.log(err);
+			res.status(500).send(err);
+		}
+	});
+
+	app.post('/tradeaggregation',(req,res)=>{
+		try{
+			myfunc.tradeAggregation(req,res);
+		}catch(err){
+			console.log(err);
+			res.status(500).send(err);
+		}
+	});
+
+	app.post('/alltrades',(req,res)=>{
+		try{
+			myfunc.allTrades(req,res);
+		}catch(err){
+			console.log(err);
+			res.status(500).send(err);
+		}
+	});
+
 }
 

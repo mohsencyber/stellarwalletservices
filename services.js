@@ -1069,7 +1069,7 @@ exports.tokenreport = async function(req,res){
 	var assetCode = req.body.assetcode;
 	var assetIssuer = req.body.assetissuer;
 	var offset = req.body.offset;
-	var limit  = req.body.len;
+	var limit  = req.body.length;
 	var asset = new Assets(assetCode,assetIssuer);
 	var assetObj = asset.getAssetObj(SqlQ,async function(assetObj){
 		asset.getDecimal(server,async function(decimalAsset){
@@ -1109,3 +1109,215 @@ exports.tokenreport = async function(req,res){
 		});
 	});
 };//end tokenreport
+
+exports.manageBuyOffer = async function(req,res){
+	var sellingcode = req.body.sellCode;
+	var sellingissuer = req.body.sellissuer;
+	var buyingcode = req.body.buycode;
+	var buyingissuer = req.body.buyissuer;
+	var buyamount = req.body.amount;
+	var buyprice = req.body.price;
+	var offerID = 0;
+	if ( req.body.offerid )
+		offerID=req.body.offerid;
+	var additionalFee=0;
+    if ( req.body.additionalfee )
+		additionalFee = parseInt(req.body.additionalfee);
+	var requested = StellarSdk.Keypair.fromPublicKey(req.body.accountid); 
+	var memotype = StellarSdk.MemoText;
+    if ( req.body.memotype == 'hash' )
+        memotype = StellarSdk.MemoHash;
+    if ( !req.body.memo )
+        memotype = StellarSdk.MemoNone;
+    var memoObj = new StellarSdk.Memo(memotype,req.body.memo);
+	var selling = new Assets(sellingcode,sellingissuer);
+	var buying = new Assets(buyingcode,buyingissuer);
+	selling.getAssetObj(SqlQ, async sellAsset => {
+		buying.getAssetObj(SqlQ, async buyAsset => { 
+			await server.loadAccount(requested.publicKey())
+			.then(function(receiver) {
+			  var transaction = new StellarSdk.TransactionBuilder(receiver, {
+			memo: memoObj,
+			fee: conf.BaseFee+additionalFee,
+				networkPassphrase: conf.NetworkPass
+			  })
+				.addOperation(StellarSdk.Operation.manageBuyOffer({
+				selling:sellAsset,
+				buying:buyAsset,
+				buyAmount:buyamount,
+				price:buyprice,
+				offerId:offerID
+				}))
+				.setTimeout(0)
+				.build();
+				 return  res.end(transaction.toXDR());
+			});			
+		}); 
+	});
+};//end mamangebuyoffer
+
+exports.manageSellOffer = async function(req,res){
+	var sellingcode = req.body.sellCode;
+	var sellingissuer = req.body.sellissuer;
+	var buyingcode = req.body.buycode;
+	var buyingissuer = req.body.buyissuer;
+	var buyamount = req.body.amount;
+	var buyprice = req.body.price;
+	var offerID = 0;
+	if ( req.body.offerid )
+		offerID=req.body.offerid;
+	var additionalFee=0;
+    if ( req.body.additionalfee )
+		additionalFee = parseInt(req.body.additionalfee);
+	var requested = StellarSdk.Keypair.fromPublicKey(req.body.accountid); 
+	var memotype = StellarSdk.MemoText;
+    if ( req.body.memotype == 'hash' )
+        memotype = StellarSdk.MemoHash;
+    if ( !req.body.memo )
+        memotype = StellarSdk.MemoNone;
+    var memoObj = new StellarSdk.Memo(memotype,req.body.memo);
+	var selling = new Assets(sellingcode,sellingissuer);
+	var buying = new Assets(buyingcode,buyingissuer);
+	selling.getAssetObj(SqlQ, async sellAsset => {
+		buying.getAssetObj(SqlQ, async buyAsset => { 
+			await server.loadAccount(requested.publicKey())
+			.then(function(receiver) {
+			  var transaction = new StellarSdk.TransactionBuilder(receiver, {
+			memo: memoObj,
+			fee: conf.BaseFee+additionalFee,
+				networkPassphrase: conf.NetworkPass
+			  })
+				.addOperation(StellarSdk.Operation.manageSellOffer({
+				selling:sellAsset,
+				buying:buyAsset,
+				amount:buyamount,
+				price:buyprice,
+				offerId:offerID
+				}))
+				.setTimeout(0)
+				.build();
+				 return  res.end(transaction.toXDR());
+			});			
+		}); 
+	});
+};//end manageselloffer
+
+exports.createPassiveSellOffer = async function(req,res){
+	var sellingcode = req.body.sellCode;
+	var sellingissuer = req.body.sellissuer;
+	var buyingcode = req.body.buycode;
+	var buyingissuer = req.body.buyissuer;
+	var buyamount = req.body.amount;
+	var buyprice = req.body.price;
+	var additionalFee=0;
+    if ( req.body.additionalfee )
+		additionalFee = parseInt(req.body.additionalfee);
+	var requested = StellarSdk.Keypair.fromPublicKey(req.body.accountid); 
+	var memotype = StellarSdk.MemoText;
+    if ( req.body.memotype == 'hash' )
+        memotype = StellarSdk.MemoHash;
+    if ( !req.body.memo )
+        memotype = StellarSdk.MemoNone;
+    var memoObj = new StellarSdk.Memo(memotype,req.body.memo);
+	var selling = new Assets(sellingcode,sellingissuer);
+	var buying = new Assets(buyingcode,buyingissuer);
+	selling.getAssetObj(SqlQ, async sellAsset => {
+		buying.getAssetObj(SqlQ, async buyAsset => { 
+			await server.loadAccount(requested.publicKey())
+			.then(function(receiver) {
+			  var transaction = new StellarSdk.TransactionBuilder(receiver, {
+			memo: memoObj,
+			fee: conf.BaseFee+additionalFee,
+				networkPassphrase: conf.NetworkPass
+			  })
+				.addOperation(StellarSdk.Operation.createPassiveSellOffer({
+				selling:sellAsset,
+				buying:buyAsset,
+				amount:buyamount,
+				price:buyprice
+				}))
+				.setTimeout(0)
+				.build();
+				 return  res.end(transaction.toXDR());
+			});			
+		}); 
+	});
+};//end managepassiveselloffer
+
+exports.myOffers = async function(req,res){
+	//
+	var accountid = StellarSdk.Keypair.fromPublicKey(req.body.accountid); 
+	await server.offers()
+	.forAccount(accountid)
+	.call().then(offers=>{
+		console.log(offers);
+		return res.end(offers);
+	});
+};//end myoffers
+
+exports.orderbook = async function(req,res){
+	var buycode = req.body.buyingcode;
+	var buyissuer = StellarSdk.Keypair.fromPublicKey(req.body.buyingissuer); 
+	var sellcode = req.body.sellingcode;
+	var sellissuer = StellarSdk.Keypair.fromPublicKey(req.body.sellingissuer); 
+	var selling = new Assets(sellcode,sellissuer);
+	var buying = new Assets(buycode,buyissuer);
+	selling.getAssetObj(SqlQ, async sellAsset => {
+		buying.getAssetObj(SqlQ, async buyAsset => {
+			await server.orderbook(sellAsset,buyAsset)
+			.call().then(orderbooks =>{
+				return res.end(orderbooks);
+			});
+		});
+	});
+};//end orderbook
+
+exports.tradeAggregation = async function(req,res){
+	var basecode = req.body.basecode;
+	var baseissuer = req.body.baseissuer;
+	var countercode = req.body.countercode;
+	var counterissuer = req.body.counterissuer;
+	var starttime = parseInt(req.body.starttime);
+	var endtime = parseInt(req.body.endtime);
+	var resolution = Number(req.body.resolution);
+	var baseasset = new Assets(basecode,baseissuer);
+	var offset=0;
+	var counterasset = new Assets(countercode,counterissuer);
+	baseasset.getAssetObj(SqlQ, async baseAsset=>{
+		counterasset.getAssetObj(SqlQ,async counterAsset=>{
+			await server.tradeAggregation(baseAsset,counterAsset,starttime,endtime,resolution,offset)
+			.call().then( tradeaggre => {
+				return res.end(tradeaggre);
+			});
+		});
+	});
+};
+
+exports.allTrades = async function(req,res){
+	var basecode = req.body.basecode;
+	var baseissuer = req.body.baseissuer;
+	var countercode = req.body.countercode;
+	var counterissuer = req.body.counterissuer;
+	var offerID = req.body.offerid;
+	var accountID = req.body.accountid;
+	var baseasset = new Assets(basecode,baseissuer);
+	var counterasset = new Assets(countercode,counterissuer);
+	var alltrades =  server.trades();
+	if ( basecode || countercode ){
+		baseasset.getAssetObj(SqlQ, async baseAsset=>{
+			counterasset.getAssetObj(SqlQ,async counterAsset=>{
+				alltrades.forAssetPair(baseAsset,counterAsset);
+			});
+		});
+	}
+	if ( offerID )
+		alltrades.forOffer(offerID);
+		
+	if ( accountID )
+		alltrades.forAccount(accountID);
+
+	alltrades.call().then( alltrade => {
+		return res.end(alltrade);
+	});
+
+};//end allTrade
