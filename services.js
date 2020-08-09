@@ -1251,7 +1251,7 @@ exports.myOffers = async function(req,res){
 	.forAccount(accountid)
 	.call().then(offers=>{
 		console.log(offers);
-		return res.end(offers);
+		return res.end(JSON.stringify(offers));
 	});
 };//end myoffers
 
@@ -1266,7 +1266,7 @@ exports.orderbook = async function(req,res){
 		buying.getAssetObj(SqlQ, async buyAsset => {
 			await server.orderbook(sellAsset,buyAsset)
 			.call().then(orderbooks =>{
-				return res.end(orderbooks);
+				return res.end(JSON.stringify(orderbooks));
 			});
 		});
 	});
@@ -1287,7 +1287,7 @@ exports.tradeAggregation = async function(req,res){
 		counterasset.getAssetObj(SqlQ,async counterAsset=>{
 			await server.tradeAggregation(baseAsset,counterAsset,starttime,endtime,resolution,offset)
 			.call().then( tradeaggre => {
-				return res.end(tradeaggre);
+				return res.end(JSON.stringify(tradeaggre));
 			});
 		});
 	});
@@ -1317,7 +1317,7 @@ exports.allTrades = async function(req,res){
 		alltrades.forAccount(accountID);
 
 	alltrades.call().then( alltrade => {
-		return res.end(alltrade);
+		return res.end(JSON.stringify(alltrade));
 	});
 
 };//end allTrade
