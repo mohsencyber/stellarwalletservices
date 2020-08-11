@@ -885,11 +885,11 @@ exports.buyAssets = async function(req,res){
 			           		     return res.send(subres.ledger.toString());
 				   	})
 				  }).catch(err=>{
-				    console.log(`[TransERROR] ${err}`);
+				    console.log(`[TransERROR] ${JSON.stringify(err)}`);
 				    SqlQ.query(updateErrStr,Values,(errm,ress)=>{
                                 	console.log(errm);
                         		});
-                                    return res.status(401).end(err);
+                                    return res.status(401).json(err);
 			     	})
 			   }
 			});
