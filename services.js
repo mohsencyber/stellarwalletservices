@@ -825,7 +825,7 @@ exports.buyAssetsThird = async function(req,res){
 
 exports.TransInquiry= async function (req,res){
 	var sqlstr = "select * from buyrequest where requestid=? "
-        var vaules = [req.body.requestid];
+        var values = [req.body.requestid];
         if ( req.body.destinationid ) {
                  sqlstr = "select * from buyrequest  where requestid=? and destinationid=?";
                  values = [req.body.requestid,req.body.destinationid];
