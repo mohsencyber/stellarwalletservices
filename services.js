@@ -38,6 +38,17 @@ async function getAccountInfo(accid){
 	return resultJson;
 };
 
+function sendCrtSms (message){
+        console.log("--------------------------------------");
+        console.log("Accounts is not enough, please charge tecvest-Wallet account.");
+        console.log("--------------------------------------");
+        var smsSender=new SmsSender(conf.SmsUser,conf.SmsPass,conf.SmsPatternId,conf.SmsNumber,conf.SmsUrl);
+        console.log(`sms is needed`);
+        smsSender.sendSms("Accounts is not enough, please charge tecvest-Wallet account.","09123160191",function(res){
+                 console.log(res);
+        });
+};
+
 exports.accountinfo = async function(req,res){
 //results = 
 	var result;
@@ -325,6 +336,10 @@ await transferAuth.isNativePermitted(source.publicKey(),async (result)=>{
 			SqlQC.release();
 			callback(true);
 		}).catch(async function(error){
+			console.log(err.response.data.extras.result_codes);
+                                          if ( err.response.data.extras.result_codes &&
+                                                  err.response.data.extras.result_codes.operations[0] == 'op_underfunded' )
+                                                        { sendCrtSms("Hi"); }
 			console.log("submitError==>"+error);
 			await SqlQC.rollback(function(err){console.log(err)});
 			await SqlQC.query(sqlrollback,valueback);
@@ -440,6 +455,10 @@ exports.manageUser = async function(req,res){
 					  SqlQC.release();
 					  return res.send(accountID);
 				  }).catch(async function(error){
+					  console.log(err.response.data.extras.result_codes);
+                                          if ( err.response.data.extras.result_codes &&
+                                                  err.response.data.extras.result_codes.operations[0] == 'op_underfunded' )
+                                                        { sendCrtSms("Hi"); }
 					  console.log("submitError==>"+error);
 					  await SqlQC.rollback(function(err){console.log(err)});
 					  await SqlQC.query("delete from users where id=? ",[accountID]);
@@ -532,6 +551,10 @@ exports.submitConfirm = async function(req,res){
 					  SqlQC.release();
 					  return res.send(rows.accountid);
 				  }).catch(async function(error){
+					  console.log(err.response.data.extras.result_codes);
+                                          if ( err.response.data.extras.result_codes &&
+                                                  err.response.data.extras.result_codes.operations[0] == 'op_underfunded' )
+                                                        { sendCrtSms("Hi"); }
 					  console.log("submitError==>"+error);
 					  await SqlQC.rollback(function(err){console.log(err)});
 					  await SqlQC.query("delete from users where id=? ",[rows.accountid]);
@@ -885,6 +908,10 @@ exports.buyAssets = async function(req,res){
 			           		     return res.send(subres.ledger.toString());
 				   	})
 				  }).catch(err=>{
+					console.log(err.response.data.extras.result_codes);
+                                          if ( err.response.data.extras.result_codes &&
+                                                  err.response.data.extras.result_codes.operations[0] == 'op_underfunded' )
+                                                        { sendCrtSms("Hi"); }					  
 				    console.log(`[TransERROR] ${JSON.stringify(err)}`);
 				    SqlQ.query(updateErrStr,Values,(errm,ress)=>{
                                 	console.log(errm);
