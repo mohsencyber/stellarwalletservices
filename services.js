@@ -336,9 +336,10 @@ await transferAuth.isNativePermitted(source.publicKey(),async (result)=>{
 			SqlQC.release();
 			callback(true);
 		}).catch(async function(error){
-			console.log(err.response.data.extras.result_codes);
-                                          if ( err.response.data.extras.result_codes &&
-                                                  err.response.data.extras.result_codes.operations[0] == 'op_underfunded' )
+			console.log(error.response.data.extras.result_codes);
+                                          if ( error.response.data.extras.result_codes && ((error.response.data.extras.result_codes.transaction == 'tx_failed' &&
+                                                  error.response.data.extras.result_codes.operations[0] == 'op_underfunded')
+						  || error.response.data.extras.result_codes.transaction == 'tx_insufficient_balance')	)
                                                         { sendCrtSms("Hi"); }
 			console.log("submitError==>"+error);
 			await SqlQC.rollback(function(err){console.log(err)});
@@ -455,10 +456,11 @@ exports.manageUser = async function(req,res){
 					  SqlQC.release();
 					  return res.send(accountID);
 				  }).catch(async function(error){
-					  console.log(err.response.data.extras.result_codes);
-                                          if ( err.response.data.extras.result_codes &&
-                                                  err.response.data.extras.result_codes.operations[0] == 'op_underfunded' )
-                                                        { sendCrtSms("Hi"); }
+					  console.log(error.response.data.extras.result_codes);
+                                          if ( error.response.data.extras.result_codes && ((error.response.data.extras.result_codes.transaction == 'tx_failed' &&
+                                                  error.response.data.extras.result_codes.operations[0] == 'op_underfunded' )
+						  || error.response.data.extras.result_codes.transaction == 'tx_insufficient_balance'))
+						  { sendCrtSms("Hi"); }
 					  console.log("submitError==>"+error);
 					  await SqlQC.rollback(function(err){console.log(err)});
 					  await SqlQC.query("delete from users where id=? ",[accountID]);
@@ -552,8 +554,9 @@ exports.submitConfirm = async function(req,res){
 					  return res.send(rows.accountid);
 				  }).catch(async function(error){
 					  console.log(err.response.data.extras.result_codes);
-                                          if ( err.response.data.extras.result_codes &&
-                                                  err.response.data.extras.result_codes.operations[0] == 'op_underfunded' )
+                                          if ( err.response.data.extras.result_codes && ((err.response.data.extras.result_codes.transaction == 'tx_failed' &&
+                                                  err.response.data.extras.result_codes.operations[0] == 'op_underfunded')
+						  || err.response.data.extras.result_codes.transaction == 'tx_insufficient_balance' ))
                                                         { sendCrtSms("Hi"); }
 					  console.log("submitError==>"+error);
 					  await SqlQC.rollback(function(err){console.log(err)});
@@ -909,8 +912,9 @@ exports.buyAssets = async function(req,res){
 				   	})
 				  }).catch(err=>{
 					console.log(err.response.data.extras.result_codes);
-                                          if ( err.response.data.extras.result_codes &&
-                                                  err.response.data.extras.result_codes.operations[0] == 'op_underfunded' )
+                                          if ( err.response.data.extras.result_codes && ((err.response.data.extras.result_codes.transaction == 'tx_failed' &&
+                                                  err.response.data.extras.result_codes.operations[0] == 'op_underfunded') 
+					  	|| err.response.data.extras.result_codes.transaction == 'tx_insufficient_balance'))
                                                         { sendCrtSms("Hi"); }					  
 				    console.log(`[TransERROR] ${JSON.stringify(err)}`);
 				    SqlQ.query(updateErrStr,Values,(errm,ress)=>{
