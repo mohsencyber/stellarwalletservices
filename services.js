@@ -31,6 +31,7 @@ const publicKey='GDKHHHLBBCAEUD54ZBGXNFSXBR37EUHJCKGXOFTJLXXLIA75TNK533SI';//tes
 const secretKey='SCOE3UNFCGYGKHWLLEG2KONSE7OYXHTWTTEGCQ6B2VYP5HH76S6PYOGI';//test
 const  server = new StellarSdk.Server(conf.HorizonUrl);//'https://hz1-test.kuknos.org');
 const server_statement = new StellarSdk.Server('https://horizon.kuknos.org');
+const notified_sms = true;
 
 async function getAccountInfo(accid){
 	var resultJson;
@@ -44,9 +45,12 @@ function sendCrtSms (message){
         console.log("--------------------------------------");
         var smsSender=new SmsSender(conf.SmsUser,conf.SmsPass,conf.SmsPatternId,conf.SmsNumber,conf.SmsUrl);
         console.log(`sms is needed`);
-        smsSender.sendSms("Accounts is not enough, please charge tecvest-Wallet account.","09123160191",function(res){
-                 console.log(res);
-        });
+	if ( notified_sms ){ 
+        	smsSender.sendSms("Accounts is not enough, please charge tecvest-Wallet account.","09123160191",function(res){
+                 	console.log(res);
+        	});
+		notified_sms = false;
+	}
 };
 
 exports.accountinfo = async function(req,res){
@@ -331,6 +335,7 @@ await transferAuth.isNativePermitted(source.publicKey(),async (result)=>{
 		   await SqlQC.query(sqlok,valueok,async function(err,resultt){
 		   if ( !err ){
 		  await server.submitTransaction(transaction).then(async function(subresult){
+			  notified_sms = true;
 			console.log("submit trans create acc");
 				await SqlQC.commit(function(err){});
 			SqlQC.release();
@@ -451,6 +456,7 @@ exports.manageUser = async function(req,res){
 		             await SqlQC.query(sqlconfiguser,valueins,async function(err,resultt){
 				     if ( !err ){
 			        await server.submitTransaction(transaction).then(async function(subresult){
+					  notified_sms = true;
 					  console.log("submit trans create acc");
 				          await SqlQC.commit(function(err){});
 					  SqlQC.release();
@@ -548,6 +554,7 @@ exports.submitConfirm = async function(req,res){
 		             await SqlQC.query(sqlconfiguser,valueins,async function(err,resultt){
 				     if ( !err ){
 			        await server.submitTransaction(transaction).then(async function(subresult){
+					  notified_sms = true;
 					  console.log("submit trans create acc");
 				          await SqlQC.commit(function(err){});
 					  SqlQC.release();
@@ -903,6 +910,7 @@ exports.buyAssets = async function(req,res){
 
 				//console.log(trans.toXDR('base64'));
 				await server.submitTransaction(trans).then(subres=>{
+					notified_sms = true;
 			                SqlQ.query(updateStr,Values,async (error,results)=>{
 						if (error ){
 							console.log(`[ERROR]${error}`);
