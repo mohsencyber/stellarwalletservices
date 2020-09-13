@@ -31,7 +31,8 @@ const publicKey='GDKHHHLBBCAEUD54ZBGXNFSXBR37EUHJCKGXOFTJLXXLIA75TNK533SI';//tes
 const secretKey='SCOE3UNFCGYGKHWLLEG2KONSE7OYXHTWTTEGCQ6B2VYP5HH76S6PYOGI';//test
 const  server = new StellarSdk.Server(conf.HorizonUrl);//'https://hz1-test.kuknos.org');
 const server_statement = new StellarSdk.Server('https://horizon.kuknos.org');
-const notified_sms = true;
+const notified_sms = new Map();
+notified_sms.set('PMN',false).set('ABPARS',false).set('A101',false);
 
 async function getAccountInfo(accid){
 	var resultJson;
@@ -39,17 +40,17 @@ async function getAccountInfo(accid){
 	return resultJson;
 };
 
-function sendCrtSms (message){
+function sendCrtSms (message,curr){
         console.log("--------------------------------------");
         console.log("Accounts is not enough, please charge tecvest-Wallet account.");
         console.log("--------------------------------------");
         var smsSender=new SmsSender(conf.SmsUser,conf.SmsPass,conf.SmsPatternId,conf.SmsNumber,conf.SmsUrl);
         console.log(`sms is needed`);
-	if ( notified_sms ){ 
+	if ( notified_sms.get(curr) ){ 
         	smsSender.sendSms("Accounts is not enough, please charge tecvest-Wallet account.","09123160191",function(res){
                  	console.log(res);
         	});
-		notified_sms = false;
+		notified_sms.set(curr, false);
 	}
 };
 
@@ -335,7 +336,7 @@ await transferAuth.isNativePermitted(source.publicKey(),async (result)=>{
 		   await SqlQC.query(sqlok,valueok,async function(err,resultt){
 		   if ( !err ){
 		  await server.submitTransaction(transaction).then(async function(subresult){
-			  notified_sms = true;
+			  notified_sms.set('PMN',true);
 			console.log("submit trans create acc");
 				await SqlQC.commit(function(err){});
 			SqlQC.release();
@@ -345,7 +346,7 @@ await transferAuth.isNativePermitted(source.publicKey(),async (result)=>{
                                           if ( error.response.data.extras.result_codes && ((error.response.data.extras.result_codes.transaction == 'tx_failed' &&
                                                   error.response.data.extras.result_codes.operations[0] == 'op_underfunded')
 						  || error.response.data.extras.result_codes.transaction == 'tx_insufficient_balance')	)
-                                                        { sendCrtSms("Hi"); }
+                                                        { sendCrtSms("Hi",'PMN'); }
 			console.log("submitError==>"+error);
 			await SqlQC.rollback(function(err){console.log(err)});
 			await SqlQC.query(sqlrollback,valueback);
@@ -456,7 +457,7 @@ exports.manageUser = async function(req,res){
 		             await SqlQC.query(sqlconfiguser,valueins,async function(err,resultt){
 				     if ( !err ){
 			        await server.submitTransaction(transaction).then(async function(subresult){
-					  notified_sms = true;
+					  notified_sms.set('PMN',true);
 					  console.log("submit trans create acc");
 				          await SqlQC.commit(function(err){});
 					  SqlQC.release();
@@ -466,7 +467,7 @@ exports.manageUser = async function(req,res){
                                           if ( error.response.data.extras.result_codes && ((error.response.data.extras.result_codes.transaction == 'tx_failed' &&
                                                   error.response.data.extras.result_codes.operations[0] == 'op_underfunded' )
 						  || error.response.data.extras.result_codes.transaction == 'tx_insufficient_balance'))
-						  { sendCrtSms("Hi"); }
+						  { sendCrtSms("Hi",'PMN'); }
 					  console.log("submitError==>"+error);
 					  await SqlQC.rollback(function(err){console.log(err)});
 					  await SqlQC.query("delete from users where id=? ",[accountID]);
@@ -554,7 +555,7 @@ exports.submitConfirm = async function(req,res){
 		             await SqlQC.query(sqlconfiguser,valueins,async function(err,resultt){
 				     if ( !err ){
 			        await server.submitTransaction(transaction).then(async function(subresult){
-					  notified_sms = true;
+					  notified_sms.set('PMN',true);
 					  console.log("submit trans create acc");
 				          await SqlQC.commit(function(err){});
 					  SqlQC.release();
@@ -564,7 +565,7 @@ exports.submitConfirm = async function(req,res){
                                           if ( err.response.data.extras.result_codes && ((err.response.data.extras.result_codes.transaction == 'tx_failed' &&
                                                   err.response.data.extras.result_codes.operations[0] == 'op_underfunded')
 						  || err.response.data.extras.result_codes.transaction == 'tx_insufficient_balance' ))
-                                                        { sendCrtSms("Hi"); }
+                                                        { sendCrtSms("Hi",'PMN'); }
 					  console.log("submitError==>"+error);
 					  await SqlQC.rollback(function(err){console.log(err)});
 					  await SqlQC.query("delete from users where id=? ",[rows.accountid]);
@@ -910,7 +911,8 @@ exports.buyAssets = async function(req,res){
 
 				//console.log(trans.toXDR('base64'));
 				await server.submitTransaction(trans).then(subres=>{
-					notified_sms = true;
+					notified_sms.set('PMN', true );
+					notified_sms.set(req.body.assetcode, true );
 			                SqlQ.query(updateStr,Values,async (error,results)=>{
 						if (error ){
 							console.log(`[ERROR]${error}`);
@@ -921,9 +923,11 @@ exports.buyAssets = async function(req,res){
 				  }).catch(err=>{
 					console.log(err.response.data.extras.result_codes);
                                           if ( err.response.data.extras.result_codes && ((err.response.data.extras.result_codes.transaction == 'tx_failed' &&
-                                                  err.response.data.extras.result_codes.operations[0] == 'op_underfunded') 
-					  	|| err.response.data.extras.result_codes.transaction == 'tx_insufficient_balance'))
-                                                        { sendCrtSms("Hi"); }					  
+                                                  err.response.data.extras.result_codes.operations[0] == 'op_underfunded') ) )
+						  sendCrtSms("Hi",req.body.assetcode);
+					  else if ( err.response.data.extras.result_codes && 
+					  	 err.response.data.extras.result_codes.transaction == 'tx_insufficient_balance')
+                                                        { sendCrtSms("Hi",'PMN'); }					  
 				    console.log(`[TransERROR] ${JSON.stringify(err)}`);
 				    SqlQ.query(updateErrStr,Values,(errm,ress)=>{
                                 	console.log(errm);
