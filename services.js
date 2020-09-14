@@ -42,12 +42,12 @@ async function getAccountInfo(accid){
 
 function sendCrtSms (message,curr){
         console.log("--------------------------------------");
-        console.log("Accounts is not enough, please charge tecvest-Wallet account.");
+        console.log(`Accounts is not enough for ${curr}, please charge tecvest-Wallet account.`);
         console.log("--------------------------------------");
         var smsSender=new SmsSender(conf.SmsUser,conf.SmsPass,conf.SmsPatternId,conf.SmsNumber,conf.SmsUrl);
         console.log(`sms is needed`);
 	if ( notified_sms.get(curr) ){ 
-        	smsSender.sendSms("Accounts is not enough, please charge tecvest-Wallet account.","09123160191",function(res){
+        	smsSender.sendSms(`Accounts is not enough balance for ${curr}, please charge tecvest-Wallet account.`,"09123160191",function(res){
                  	console.log(res);
         	});
 		notified_sms.set(curr, false);
