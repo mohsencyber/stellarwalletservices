@@ -13,7 +13,7 @@
     "express": "^4.17.1",
     "https": "^1.0.0",
     "mysql": "^2.17.1",
-    "stellar-sdk": "^3.3.0",
+    "stellar-sdk": "^8.2.3",
     "uuid": "^3.3.3"
   },
   "devDependencies": {},
