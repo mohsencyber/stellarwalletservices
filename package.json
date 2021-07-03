@@ -8,7 +8,7 @@
     "start": "node serverRest.js"
   },
   "dependencies": {
-    "axios": "^0.19.0",
+    "axios": "^0.21.1",
     "ddos": "^0.2.1",
     "express": "^4.17.1",
     "https": "^1.0.0",
